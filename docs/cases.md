@@ -1,93 +1,86 @@
-# 案例
+# Case Studies
 
-下面 7 条报告都是这一版生成的：工具测量之后，由 AI 助手逐镜看图复核（没有开看图模型），再生成报告和拆片包。拼帧图里每格是一个镜头，色条写着制作方式、把握程度和时间；完整报告里有核心看点、叙事线、分镜表、照着复刻的步骤，以及每个镜头的证据和提示词。
+All 7 reports below were generated with this version: after tool measurements, an AI assistant visually reviewed every shot (without calling a vision model API) to produce the report and breakdown package. In each storyboard grid, each cell is one shot with a color bar showing production method, confidence, and timestamp; each full report includes key takeaways, narrative arc, shot-by-shot breakdown table, remake steps, plus per-shot evidence and prompts.
 
-`docs/cases/videos/` 里的样片为了减小仓库体积重新压缩过，平台标记（抖音 / TikTok / 微信）没有保留，还多了一层压缩痕迹。自己拿它们跑，结果会和报告有出入，只用工具、不做看图复核时更明显。要复现报告，请用平台下载的原文件。
+The sample videos in `docs/cases/videos/` were re-compressed to keep the repository small, which strips platform metadata (Douyin / TikTok / WeChat) and adds another compression pass. Running the tools directly on these samples will differ slightly from the published reports—especially in tools-only mode without visual review. To reproduce exact results, use original platform downloads.
 
-## 1. 原片 vs AI 复刻：TikTok 实拍 → 换产品重做
+## 1. Original vs. AI Remake: TikTok Live-Action → Product Swap
 
-20 秒 · 原片 14 镜 / 复刻版 21 秒 8 镜
+20 s · Original 14 shots / Remake 21 s 8 shots
 
-![榨汁杯原片与 AI 复刻版的逐镜拆解](cases/juicer_pair.jpg)
+![Shot-by-shot comparison of original vs AI remake](cases/juicer_pair.jpg)
 
-▶ [TikTok 原片](cases/videos/v11_tiktok_original.mp4) · [AI 复刻版](cases/videos/v12_oiioii_juicer_remake.mp4) · 完整报告：[原片](cases/v11/report.md) · [复刻版](cases/v12/report.md)
+▶ [Original TikTok](cases/videos/v11_tiktok_original.mp4) · [AI Remake](cases/videos/v12_oiioii_juicer_remake.mp4) · Full reports: [Original](cases/v11/report.md) · [Remake](cases/v12/report.md)
 
-| | 原片 | AI 复刻版 |
+| | Original | AI Remake |
 |---|---|---|
-| 怎么做的 | 全部手机第一视角实拍，真人口播 | 全部 AI 生成 |
-| 怎么重做 | 1 个场景、2 个机位 | 8 个镜头合并成 3 次 Seedance 2.0 生成 |
-| 要准备什么 | 产品实物 | 产品参考图（杯身 Logo 要清楚） |
+| How it was made | 100% first-person handheld phone footage, human voiceover | 100% AI-generated |
+| How to remake | 1 set, 2 camera positions | 8 shots batched into 3 Seedance 2.0 generations |
+| Assets needed | Physical product | Product reference images (clear bottle logo) |
 
-- 原片：一开头就下结论（标题「This bottle is a GAME CHANGER」），然后一步一刀演示到能喝。手、台面上的瓶罐和背景在每一镜里都一致，有自然的手持晃动。
-- 复刻版：放料、合盖、打、倒杯，一镜一步。杯身品牌字每一镜都是乱码；整块水果半秒内变成奶昔、没有搅打过程；玻璃杯两秒里变了三次形状，这些都是生成画面的破绽。
-- 复刻版按生成来组织：8 个镜头分 3 次生成，每次用参考图保住产品长相。报告里写明每次要喂哪些输入、从哪来，以及完整的中英文提示词。
+- **Original:** Opens with a hook statement ("This bottle is a GAME CHANGER"), then demonstrates step-by-step until drinking. Hands, countertop bottles, and background remain consistent across every shot with natural handheld shake.
+- **Remake:** Adding fruit, closing lid, blending, pouring—one shot per step. The brand text on the cup is garbled in every shot; whole fruit turns into a smoothie in half a second with no blending process; the glass changes shape three times in two seconds—classic generative artifacts.
+- **Generation batching:** 8 shots grouped into 3 generations using reference images to lock product appearance. The report specifies exact inputs, sources, and bilingual prompts for each batch.
 
-## 2. 混合片：AI 人物对话 + 代码界面 + 真实截图
+## 2. Mixed Media: AI Dialogue + Code UI + Real Screenshots
 
-19 秒 · 10 镜
+19 s · 10 shots
 
-![混合片拆解拼帧](cases/dual_role/storyboard.jpg)
+![Mixed media storyboard](cases/dual_role/storyboard.jpg)
 
-▶ [原视频](cases/videos/dual_role.mp4) · [完整报告](cases/dual_role/report.md)
+▶ [Original Video](cases/videos/dual_role.mp4) · [Full Report](cases/dual_role/report.md)
 
-怎么做的：代码 / 模板渲染 59% + AI 生成视频 41%。两个 AI 角色一问一答（5 镜，两个夜晚的房间），中间穿插 5 段深灰模板画面，里面是诊断报告、笔记配图和 GitHub 页面的截图，每段都在推近。没有配乐，也没有后期音效。
+- **How it was made:** 59% code / template render + 41% AI-generated video. Two AI characters have a Q&A dialogue (5 shots across two night rooms), intercut with 5 dark-gray UI template segments featuring diagnostic reports, note illustrations, and GitHub screenshots, each slowly zooming in. No background music or post-production SFX.
+- **How to remake:** Batch the 5 dialogue shots into 4 generations using two character reference images; build the 5 UI template segments in a single code project and swap in your own screenshots.
 
-怎么重做：5 个对话镜头分 4 次生成，用两张角色参考图锁定长相；5 段模板画面写成 1 个代码工程，截图换成你自己的。
+## 3. 3D Explainer: Why Salted Duck Eggs Leak Oil
 
-## 3. 3D 科普片：咸鸭蛋为什么会流油
+66 s · 29 shots
 
-66 秒 · 29 镜
+![3D explainer storyboard](cases/salted_egg/storyboard.jpg)
 
-![3D 科普片拆解拼帧](cases/salted_egg/storyboard.jpg)
+▶ [Original Video](cases/videos/salted_egg.mp4) · [Full Report](cases/salted_egg/report.md)
 
-▶ [原视频](cases/videos/salted_egg.mp4) · [完整报告](cases/salted_egg/report.md)
+- **How it was made:** All 29 shots are 3D-rendered. A plush monkey host holds retention while a cross-section duck egg model explains the mechanism in 4 steps—turning every invisible chemical process into a visible visual metaphor. The same cross-section model reappears across 8 shots with consistent fur and material shaders across frames. Narration + stock music + 6 post-production SFX synced to animation beats (salt crystals popping, oil droplets falling).
+- **Two ways to remake:**
+  - **Video model route:** Batch 29 shots into 14 generations.
+  - **Code route (Blender / Three.js):** Have an LLM model the character and cross-section once, set up camera angles per shot, and render—giving the best multi-angle consistency and effortless copy edits.
 
-怎么做的：29 个镜头全是 3D 渲染。毛绒小猴负责留人，鸭蛋剖面模型分 4 步讲原理：每个看不见的过程都做成一个看得见的比喻动画。同一个剖面模型在 8 个镜头里重复出现，毛发和材质跨帧稳定。旁白配曲库配乐，有 6 处后期音效，卡在盐粒弹出、油滴落下这些动画节点上。
+## 4. Code UI Motion Graphics: Product Promo
 
-怎么重做，有两条路：
+70 s · 9 shots
 
-- 交给视频模型：29 个镜头分 14 次生成。
-- 让大模型写 Blender 或 Three.js 代码：角色和剖面模型只建一次，每个镜头设好机位渲染，多角度一致性最好，改文案也只是改代码。
+![Code UI promo storyboard](cases/v10/storyboard.jpg)
 
-## 4. 代码 UI 动效：产品宣传片
+▶ [Original Video](cases/videos/v10_oiioii_gen_coding_first.mp4) · [Full Report](cases/v10/report.md)
 
-70 秒 · 9 镜
+- **How it was made:** Promo for OiiOii's "Video Remake" feature—100% code-driven UI animation with no voiceover, demonstrating the workflow ("Upload viral hit → Rewrite in one sentence → Batch render"). AI characters and products shown on screen are static images embedded inside UI cards, not full-screen AI video. One SFX lands when particles disperse at the end.
+- **How to remake:** No video model needed. Build one Remotion project where text and UI are data-driven; the report provides a shot-by-shot motion timeline ready for an LLM to code.
 
-![代码 UI 动效拆解拼帧](cases/v10/storyboard.jpg)
+## 5. AI Music Video: Historical Figure in a Recording Studio
 
-▶ [原视频](cases/videos/v10_oiioii_gen_coding_first.mp4) · [完整报告](cases/v10/report.md)
+164 s · 118 shots
 
-怎么做的：OiiOii「视频复刻」功能的宣传片，全部是代码做的界面动画，没有旁白，用「上传爆款 → 一句话改写 → 批量出片」把流程演示一遍。画面里的 AI 人物和商品是嵌在界面卡片里的静态图，不是整屏 AI 视频。结尾粒子散开时有一处后期音效。
+![AI music video storyboard (first 24 shots)](cases/qing_mv/preview.jpg)
 
-怎么重做：不需要视频模型。写成 1 个 Remotion 代码工程，文字和界面完全可控，改文案只改数据，可以直接让大模型写；报告里有逐镜的动效时间轴。
+*(Image shows the first 24 shots from an earlier split)* ▶ [Original Video](cases/videos/qing_mv.mp4) · [Full Report (118 shots)](cases/qing_mv/report.md)
 
-## 5. AI 音乐 MV：古人进录音棚
+- **How it was made:** 53% AI-generated video + 32% lip-sync avatar + 13% Ken Burns still zoom/pan + 3% code-rendered titles. Zeng Guofan wears headphones in a recording studio singing his life story, with each lyric paired with historical scenes. Opening credits state lyrics by Claude and music by Suno. Five shots are reused clips appearing twice—only needing to be generated once.
+- **How to remake:**
+  - Generate the song first in Suno matching style and tempo.
+  - Drive the studio singing shots using a portrait + vocal track via a lip-sync avatar model.
+  - Batch the remaining AI shots into 33 generations.
+  - Render Ken Burns pan/zoom shots locally from still images—no video model needed.
 
-164 秒 · 118 镜
+*(Note: The automated Audio section misclassified the singing as TTS + stock music because visual review only inspects frames; classifying AI singing requires an audio-capable model.)*
 
-![AI 音乐 MV 拆解拼帧（前 24 镜）](cases/qing_mv/preview.jpg)
+## 6. Live-Action Product Demo: ASMR Unboxing
 
-（图为旧版切分的前 24 镜）▶ [原视频](cases/videos/qing_mv.mp4) · [完整报告（118 镜）](cases/qing_mv/report.md)
+71 s · 69 shots
 
-怎么做的：AI 生成视频 53% + 数字人对口型 32% + 静图推拉 13% + 代码渲染的片名 3%。曾国藩戴着耳机在录音棚里唱自己的一生，每句歌词都配上对应的历史画面。片头字幕写明作词 Claude、作曲 Suno。有 5 镜是同一段成片在片中用了两次，复刻时只生成一次。
+![Unboxing storyboard](cases/unboxing/storyboard.jpg)
 
-怎么重做：
+▶ [Original Video](cases/videos/unboxing.mp4) *(Douyin @阿咪🍓, 720p re-encode)* · [Full Report](cases/unboxing/report.md)
 
-- 先按风格和节奏用 Suno 生成歌。
-- 录音棚里对口型的镜头，用人像加歌声驱动数字人。
-- 其余 AI 镜头分 33 次生成。
-- 静图推拉镜头在本地用一张图做，不用调模型。
-
-报告的「声音」一节在这条上不准：它把人声判成 TTS 旁白、音乐判成曲库配乐，实际是 AI 生成的歌。看图复核只看画面，判断声音要能听音频的模型。
-
-## 6. 实拍带货：沉浸式开箱
-
-71 秒 · 69 镜
-
-![开箱实拍拆解拼帧](cases/unboxing/storyboard.jpg)
-
-▶ [原视频](cases/videos/unboxing.mp4)（抖音 阿咪🍓，720p 转码） · [完整报告](cases/unboxing/report.md)
-
-怎么做的：实拍 99%。手机固定在头顶的俯拍支架上，一双手在地毯上逐件拆 7 样奶油色居家好物；没有口播，靠拆包装的同期声和一句一句的小字幕撑住节奏，平均 1 秒一镜。拆包装的声音都是同期录的，不算后期音效。
-
-怎么重做：不需要模型。一部手机加俯拍支架，商品平铺在浅色地毯上，拆包时手从画面下方伸入；后期配一首轻快的曲库配乐，字幕用小字写在商品旁边。
+- **How it was made:** 99% live action. A phone mounted overhead on a top-down rig films a pair of hands unboxing 7 cream-toned home items on a rug; no spoken narration, relying on crisp unboxing foley and short floating captions to keep an average pace of 1 shot per second. Unboxing sounds are live production audio rather than added SFX.
+- **How to remake:** No AI model needed. One phone on an overhead rig, products arranged on a light-colored rug, hands entering from the bottom edge; add upbeat stock BGM in post and place small captions beside each item.

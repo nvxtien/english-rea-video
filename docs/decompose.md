@@ -1,91 +1,92 @@
-# 拆解方法：怎么判断一个镜头是"怎么做出来的"
+# Decomposition Methodology: How Shot Production Methods Are Classified
 
-目标：对每个镜头给出底层画面的制作方式、叠加层、证据和置信度，再给出复刻路线。
+Goal: for every shot, determine the underlying visual production method, overlay layers, evidence, and confidence, then assign a remake route.
 
-## 1. 分类体系
+## 1. Taxonomy
 
-| 标签 | 含义 | 复刻路线（rea_video/capabilities/routing.yaml） |
+| Label | Meaning | Remake Route (`rea_video/capabilities/routing.yaml`) |
 |---|---|---|
-| `live_action` | 实拍 | R07：AI 图生视频近似，或重新拍摄 |
-| `ai_video` | AI 生成视频 | R07：首尾帧 + 提示词，由 capsule-cinema 生成 |
-| `avatar` | 数字人口播 | R03：配音克隆 + 数字人 |
-| `cg_3d` | 3D 渲染 | R08：3D 建模渲染，或 AI 首尾帧近似 |
-| `code_render` | 代码/模板渲染（MG、文字、UI、图表、卡片） | R01：Remotion/HTML 重建 |
-| `screen_capture` | 屏幕录制/截图 | R02：真实界面录制 |
-| `still_motion` | 静态图 + 推拉摇移 | R17：一张图 + 测得的运动参数，本地精确复刻 |
-| `static_hold` | 静帧定格 | R18：一张图 |
+| `live_action` | Live-action camera footage | R07: AI image-to-video approximation, or re-film |
+| `ai_video` | AI-generated video | R07: First/last keyframes + prompt, generated via capsule-cinema |
+| `avatar` | Digital human / talking avatar | R03: Voice cloning + avatar |
+| `cg_3d` | 3D rendering | R08: 3D modeling & render, or AI keyframe approximation |
+| `code_render` | Code / template render (motion graphics, text, UI, charts, cards) | R01: Remotion / HTML rebuild |
+| `screen_capture` | Screen recording / screenshot | R02: Real UI capture |
+| `still_motion` | Still image + pan / zoom / tilt (Ken Burns) | R17: Single image + measured motion parameters, exact local rebuild |
+| `static_hold` | Frozen still frame | R18: Single image |
 
-叠加层单独列出：字幕、标题、文字标注、图形贴片、版式模板。同一镜头可以是"AI 视频 + 代码字幕"。
+Overlays are tracked separately: subtitles, titles, text callouts, graphic stickers, and layout templates. A single shot can be "AI video + code subtitles".
 
-## 2. 证据从哪里来
+## 2. Where Evidence Comes From
 
-确定性取证负责"可测量"的问题，VLM 负责"看懂"的问题，两者分工明确：
+Deterministic forensics handle "measurable" signals while VLMs handle "semantic" visual understanding, with a clear division of labor:
 
-| 问题 | 方法 | 可靠度 |
+| Question | Method | Reliability |
 |---|---|---|
-| 哪里切镜 | HSV 直方图距离与像素差分，加局部自适应阈值；变化面积要足够大，元素弹出不算切镜。跳剪 / 推近切：同机位一帧内的跳变，比前后几帧的变化高出很多且前后平稳；一两帧内亮了又恢复的闪光、火光不算切镜。交叉溶解：中间帧是否为两端帧的线性混合，并用光流排除推拉运动。转场：每处边界量出起止区间，再分淡入淡出 / 闪白 / 叠化 / 划像 / 推移 / 甩镜 / 缩放 / 旋转 / 模糊 / 故障 / 抖动，划像和推移带方向 | 高（两条真值片 F1=1.0，其中一条含 14 处 0.25s 溶解） |
-| 画面动没动 | 逐像素完全重复帧的比例、首尾帧差 | 高 |
-| 是不是一张图在推拉 | LK 光流拟合相似变换（RANSAC）：内点率高、残差小、无局部运动，且运动补偿后几乎没有残余 | 高 |
-| 渲染还是拍摄的纹理 | 平坦 8×8 块比例、覆盖 95% 像素所需颜色数、横竖直边比例、Immerkær 噪声 | 高（区分渲染与照片） |
-| 2D 合成 / 代码动效 | 背景像素逐帧完全不变、只有局部在动 | 高 |
-| 原始帧率 | 重复帧规律（24→30 时约 20%，周期 4–6）；插帧导致的清晰度周期起伏（没有重复帧时只算弱证据：重新压缩也会造出来）；原生 ≥48fps 且无重复帧 | 中高：生成模型输出 24/25fps，手机常拍 60fps |
-| 实拍还是 AI 还是 3D | 传感器噪声与时域噪声、手持抖动、帧率指纹，加上 VLM 看破绽（手指、文字、物理、纹理闪烁） | 只有确定性时为中，加 VLM 后为高 |
-| 元数据 | 拍摄设备 make/model；GB 45438 AIGC 隐式标识（Label 1/2/3 及服务方编码）；C2PA；编辑器/渲染器签名 | 出现时很强；常被平台清除 |
-| 叠加层 | 背景在动但像素冻结的边缘簇，加 OCR 文字轨（位置、是否随时间变化、是否水平） | 中高 |
-| 音频 | 起音/节拍、切点落在起音上的比例（卡点）、语音调制特征 | 中 |
+| Where are the cuts | HSV histogram distance & pixel difference with local adaptive thresholding; changed area must be large enough so element pop-ins aren't counted as cuts. Jump cuts / punch-in cuts: single-frame spike on the same camera setup surrounded by stable frames; 1–2 frame flashes/fire bursts are excluded. Cross-dissolves: checks whether middle frames are linear blends of endpoints while using optical flow to exclude camera push/pull. Transitions: measures start/end span per boundary and classifies fade / flash-white / dissolve / wipe / push / whip-pan / zoom / spin / blur / glitch / shake (with direction for wipes & pushes) | High (F1=1.0 on two ground-truth clips, including one with 14 × 0.25s dissolves) |
+| Is the frame moving | Ratio of pixel-exact duplicate frames + first-to-last frame diff | High |
+| Is it a single still panning/zooming | LK optical flow fitted to a similarity transform (RANSAC): high inlier ratio, low residual, no local motion, near-zero residual after motion compensation | High |
+| Rendered vs. photographed texture | Flat 8×8 block ratio, color count covering 95% of pixels, horizontal/vertical straight-edge ratio, Immerkær noise | High (separates renders from photos) |
+| 2D compositing / code motion | Background pixels stay identical frame-to-frame while only local regions move | High |
+| Native frame rate | Duplicate frame cadence (~20% on 24→30fps, period 4–6); periodic sharpness oscillation from frame interpolation (weak evidence alone since re-encoding can mimic it); native ≥48fps with zero duplicates | Medium-High: generative models output 24/25fps; phones often shoot 60fps |
+| Live action vs. AI vs. 3D | Sensor & temporal noise, handheld shake, frame-rate fingerprint, plus VLM artifact checks (hands, text, physics, texture flicker) | Medium deterministic-only; High with VLM |
+| Metadata | Capture device make/model; GB 45438 implicit AIGC watermarks (Label 1/2/3 & provider codes); C2PA; editor/renderer signatures | Very strong when present; often stripped by platforms |
+| Overlays | Edge clusters where pixels freeze over moving background + OCR text tracks (position, temporal change, horizontality) | Medium-High |
+| Audio | Onsets / beats, cut-on-onset ratio, speech modulation features | Medium |
 
-跳剪连起来的几段是同一条素材剪开的（同机位、同背景），开 VLM 时合成一个片段问一次（最长 12 秒、最多 8 段）：制作方式和拍法整段给一次，每段的内容描述和复刻提示词分开给。VLM 调用次数有上限时，优先给工具最拿不准、时长最长的镜头。镜头上的文字直接取整片 OCR 那一遍在这段时间里读到的结果，整片 OCR 太稀（长视频）或关掉剪辑包装层时，才按镜头时长自己读 1–4 帧。
+Jump-cut segments come from the same source clip (same camera, same background); when VLM is enabled, they are combined into a single clip query (max 12s, max 8 segments): production method and filming style are answered once for the whole group, while per-segment descriptions and remake prompts are returned individually. When VLM call budgets are capped, the most uncertain and longest shots are prioritized. On-screen text per shot is pulled from the full-video OCR pass; only when full-video OCR is too sparse (long videos) or the packaging layer is disabled does it sample 1–4 frames per shot.
 
-## 2.1 用户真实素材
+## 2.1 User Real Assets
 
-素材来源分为四种：AI 生成、制作方渲染、用户真实素材、混合。
+Source materials fall into four types: AI-generated, producer-rendered, user real assets, and mixed.
 
-- **整帧**：从底层画面标签推出。实拍 = 实拍素材；录屏 = 界面录制/截图；静帧来源是照片或截图 = 真实素材。
-- **嵌入**（只在渲染画面里检测）：
-  - 浅色低饱和面板内，单帧有 ≥6 处小字号文字 → 界面截图（确定是真实素材）
-  - 灰度熵高、无平涂色的区域 → 图片或视频片段（真实还是 AI **待确认**）
-  - 字幕带不参与检测
-- 复刻计划里，真实素材都列在 `user_assets`，复刻时由用户提供，不能用模型生成。
+- **Full-frame:** Inferred from the base visual label. Live action = live footage; screen capture = UI recording/screenshot; static hold sourced from a photo or screenshot = real asset.
+- **Embedded** (detected only inside rendered shots):
+  - ≥6 small-font text regions inside a light, low-saturation panel in a single frame → UI screenshot (confirmed real asset)
+  - High grayscale entropy without flat fills → photo or video clip (real vs. AI **to be confirmed**)
+  - Subtitle bands are excluded
+- In the remake plan, all real assets are listed under `user_assets` and must be supplied by the user rather than generated by models.
 
-## 2.2 声音
+## 2.2 Audio
 
-在 STFT 上做 HPSS（中值滤波分离谐波和打击成分）：
+HPSS (median filtering separating harmonic and percussive components) on STFT:
 
-- **人声**：人声频段 3–8Hz 的音节调制，加上句间停顿；用基频给出男/女声提示。多人说话时在人声干声上按音色分出说话人，每人一条音轨。
-- **音乐**：人声间隙里仍然响亮且有音调的音乐床，或明显的节拍周期；用起音自相关估 BPM，用 Krumhansl 轮廓估调性，用色度新颖度找段落变化。
-- **剪辑**：切点落在节拍或起音上的比例。
-- **音效**：确定性层只给人声之外的显著瞬态作为低置信候选，完整清单由 VLM 听出（见 eval/RESULTS.md 的实测）。
-- **产物**：`audio`（测量值）、`audio_plan`（合并 VLM 后的声音轨与复刻方案）、`audio.png`（时间轴）。
+- **Voice:** 3–8 Hz syllable modulation in the speech band plus inter-sentence pauses; fundamental frequency hints male/female. Multi-speaker tracks are diarized by timbre on the dry vocal stem (`stems/voice_S1.wav`, etc.).
+- **Music:** Harmonic music bed remaining active during vocal gaps or clear beat periodicity; onset autocorrelation estimates BPM, Krumhansl profiles estimate key, and chroma novelty detects section changes.
+- **Editing:** Ratio of cuts landing on beats or onsets.
+- **SFX:** Deterministic stage flags prominent non-vocal transients as low-confidence candidates; the full list is identified by an audio-capable VLM (see `eval/RESULTS.md`).
+- **Outputs:** `audio` (raw measurements), `audio_plan` (merged VLM + deterministic audio tracks & remake plan), `audio.png` (timeline).
 
-## 3. 融合
+## 3. Fusion
 
-最终概率 ∝ 确定性概率^(0.6×可信度权重) × VLM 概率，再加两条硬约束：
+Final probability $\propto P_{\text{det}}^{0.6 \times w_{\text{conf}}} \times P_{\text{VLM}}$, plus two hard constraints:
 
-- 画面冻结的镜头不能被判为任何"视频生成"类。
-- 整图刚体推拉的镜头不能被判为实拍或数字人。
+- A frozen shot cannot be classified as any "video generation" category.
+- A rigid full-frame pan/zoom shot cannot be classified as live action or avatar.
 
-可信度权重：静帧 1.6、静态图推拉 1.4、代码渲染 1.0，实拍、AI 和 3D 都只有 0.6，所以这三类主要由 VLM 决定。
+Confidence weights: `static_hold` 1.6, `still_motion` 1.4, `code_render` 1.0; `live_action`, `ai_video`, and `cg_3d` are only 0.6 so VLM/visual review carries the primary decision among those three.
 
-有看图来源（VLM 或 agent 复核）参与时，分两步判断：先判画面是怎么来的（生成：AI 视频 + 数字人；渲染：3D + 代码；实拍；录屏；静图），再在这一组里判细类，置信度是这一组的总概率。这样「工具判 AI 视频、agent 判数字人、VLM 判实拍」时，前两票会合起来算「生成」，不会被一个强势的「实拍」分散击破。只用工具时仍按细类直接取最高：工具给数字人的分数是从 AI 视频里分出来的，合并会压过实拍（口播评测集上实测会从 0.51 掉到 0.33）。
+When visual sources (VLM or agent review) participate, classification runs in two stages: first classify the production group (Generated: `ai_video` + `avatar`; Rendered: `cg_3d` + `code_render`; `live_action`; `screen_capture`; Still: `still_motion` + `static_hold`), then pick the fine-grained label within that group using the group's total probability as confidence. That way, if tools say `ai_video`, agent says `avatar`, and VLM says `live_action`, the first two votes combine under "Generated" instead of splitting and losing to `live_action`. In tools-only mode, the top fine-grained label is used directly (since tool `avatar` scores are carved out of `ai_video`, merging them would unfairly suppress `live_action`—measured drop from 0.51 to 0.33 on talking-head evals).
 
-多数规则：工具首选和两个看图来源中恰好一方一致（同细类，或同一组）时，结论必须在这一组里。
+Majority rule: when the tool's top choice agrees with either visual source (same label or same group), the final decision must stay within that group.
 
-其他把关：
-- 工具和 VLM 一方判实拍、一方判非实拍，且没有 agent 复核过时，标「有分歧」，进 `review_tasks.json` 的必看列表：VLM 会编出看不见的证据（榨汁杯原片里的「挂钟数字乱码」）。
-- 帧率只说明素材是 24fps 源：判成 AI 视频、又没有 AIGC 标识、看图一方认为是实拍时，标「AI 还是 24p 相机实拍待确认」，置信度封顶 0.7。
-- OCR 读到的字，如果 VLM 的后期文字清单里没有（或同一段字在画面里跟着物体移动），算物体上的字，不算叠加层。
+Other safeguards:
+- When tools and VLM disagree on live-action vs. non-live-action without agent review, the shot is flagged "disputed" and added to the mandatory checklist in `review_tasks.json` (VLMs can hallucinate nonexistent evidence).
+- Frame rate only proves a 24fps source: when labeled `ai_video` with no AIGC watermark while visual review leans live action, it is flagged "AI vs. 24p cinema camera to be confirmed" with confidence capped at 0.7.
+- OCR text absent from VLM's overlay text list (or moving along with an object) is treated as in-scene text rather than a post-production overlay.
 
-## 4. 产物
+## 4. Outputs
 
 ```
 out/<name>/
-  breakdown.json   Video IR（rea_video.breakdown.v1）：每镜特征、证据、概率、叠加层、复刻计划
-  report.html/md   人读报告（同一份内容，HTML 由 Markdown 渲染）：结论 → 内容与结构（概括、钩子、结构时间轴、脚本）→ 角色、场景与道具 →
-                   声音（人声 / 背景音乐 / 音效 / 环境声各一张卡）→ 拍法、打光与剪辑 → 剪辑包装层 → 复刻方案（含真实素材和参考素材清单）→
-                   分镜表 → 不确定点 → 附录（逐镜取证折叠、元数据）。角色、场景、道具和脚本来自 VLM 整片分析或 agent 看图（review_answers.json 顶层 cast）
-  storyboard.jpg   分镜总览（按制作方式着色）
-  shots/           每镜联系表、首帧、尾帧（首尾帧也是复刻输入）
-  clips/, vlm_cache/  VLM 输入片段和缓存（仅 --vlm）
+  breakdown.json   Video IR (rea_video.breakdown.v1): per-shot features, evidence, probabilities, overlays, remake plan
+  report.html/md   Human-readable report (HTML rendered from Markdown): Verdict → Content & Structure (summary, hook, structure timeline, script) →
+                   Cast, Settings & Props → Audio (separate cards for Voice / BGM / SFX / Ambience) → Cinematography, Lighting & Editing →
+                   Editing & Packaging Layer → Remake Plan (including real assets & reference assets) → Shot Table → Uncertainties →
+                   Appendix (collapsible per-shot forensics, metadata). Cast/settings/props/script come from VLM full-video analysis or agent visual review.
+  storyboard.jpg   Shot overview grid (color-coded by production method)
+  shots/           Per-shot contact sheets, first frame, last frame (keyframes double as remake inputs)
+  clips/, vlm_cache/  VLM input clips and cache (--vlm only)
 ```
 
-`finalize()` 可以只用已存的特征和 VLM 回答重新分类：规则更新后不必重新解码视频，`rea-video eval` 会自动这样做。
+`finalize()` can re-classify from saved features and VLM answers without re-decoding video; `rea-video eval` uses this automatically after rule updates.

@@ -1,361 +1,363 @@
-# rea-video 原语（primitives）
-# 原语 = 一种与厂商无关的能力。模型条目通过 primitives 字段声明自己支持哪些原语；
-# 路由规则（routing.yaml）只引用原语，再由原语找到候选模型。
-# 每个原语声明：输入、输出、何时使用、用哪些指标验证（metrics）、探针测什么（probe）。
+# rea-video primitives
+# A primitive = one vendor-agnostic capability. Model entries declare which primitives they support
+# via the `primitives` field; routing rules (routing.yaml) only reference primitives, which then
+# resolve to candidate models.
+# Each primitive declares: inputs, output, when to use it, which metrics verify it (metrics), and
+# what the probe measures (probe).
 
 version: 0.1.0
 updated: 2026-10-29
 
-# ---------------------------------------------------------------- 验证指标
+# ---------------------------------------------------------------- Validation metrics
 metrics:
-  cut_alignment:        {name: 切点对齐, desc: "重建片段的切点与原片切点的帧误差 / F1（容差 ±1 帧）"}
-  shot_count_match:     {name: 镜头数一致, desc: "镜头数量与时长分布的一致性"}
-  ocr_text_match:       {name: 文字一致, desc: "OCR 识别文本与目标文案的字符级一致率（CER）"}
-  layout_iou:           {name: 布局 IoU, desc: "文字/元素包围框与目标布局的 IoU（逐帧）"}
-  timing_curve_error:   {name: 动效曲线误差, desc: "元素位置/缩放/透明度随时间曲线与参考的误差"}
-  pixel_similarity:     {name: 像素相似度, desc: "SSIM / LPIPS，仅适用于代码层等可精确还原的画面"}
-  perceptual_similarity: {name: 感知相似度, desc: "DreamSim / CLIP 相似度，用于生成层"}
-  identity_consistency: {name: 主体一致性, desc: "人脸/商品/角色嵌入在镜头内与跨镜头的一致性"}
-  motion_trajectory_error: {name: 运动轨迹误差, desc: "关键点/姿态轨迹与参考动作的误差"}
-  camera_path_error:    {name: 运镜误差, desc: "估计的相机轨迹与参考运镜的差异"}
-  beat_alignment:       {name: 节拍对齐, desc: "切点/动效事件与音乐节拍的对齐误差"}
-  lip_sync:             {name: 口型同步, desc: "SyncNet 类 LSE 分数"}
-  audio_duration_match: {name: 音频时长匹配, desc: "生成语音与目标时间窗的时长误差"}
-  speech_wer:           {name: 语音可懂度, desc: "对生成语音做 ASR 后与脚本的字错率"}
-  text_render_accuracy: {name: 画内文字准确率, desc: "生成图像/视频里文字（尤其中文）的正确率"}
-  human_ab:             {name: 人工盲测, desc: "像不像 / 好不好 / 能否投放 的盲测偏好"}
+  cut_alignment:        {name: Cut alignment, desc: "Frame error / F1 between the reconstructed clip's cut points and the original's (tolerance ±1 frame)"}
+  shot_count_match:     {name: Shot-count match, desc: "Consistency between shot count and duration distribution"}
+  ocr_text_match:       {name: Text match, desc: "Character-level match rate (CER) between OCR'd text and the target copy"}
+  layout_iou:           {name: Layout IoU, desc: "IoU between text/element bounding boxes and the target layout (per frame)"}
+  timing_curve_error:   {name: Motion-curve error, desc: "Error between an element's position/scale/opacity curve over time and the reference"}
+  pixel_similarity:     {name: Pixel similarity, desc: "SSIM / LPIPS, only applicable to footage that can be reproduced exactly, like the code layer"}
+  perceptual_similarity: {name: Perceptual similarity, desc: "DreamSim / CLIP similarity, used for the generation layer"}
+  identity_consistency: {name: Subject consistency, desc: "Consistency of face/product/character embeddings within a shot and across shots"}
+  motion_trajectory_error: {name: Motion-trajectory error, desc: "Error between keypoint/pose trajectories and the reference action"}
+  camera_path_error:    {name: Camera-path error, desc: "Difference between the estimated camera trajectory and the reference camera move"}
+  beat_alignment:       {name: Beat alignment, desc: "Alignment error between cuts/motion events and the music beat"}
+  lip_sync:             {name: Lip sync, desc: "A SyncNet-style LSE score"}
+  audio_duration_match: {name: Audio-duration match, desc: "Duration error between generated speech and the target time window"}
+  speech_wer:           {name: Speech intelligibility, desc: "Word-error rate against the script after running ASR on generated speech"}
+  text_render_accuracy: {name: On-screen text accuracy, desc: "Correctness of text (especially Chinese) rendered in a generated image/video"}
+  human_ab:             {name: Human blind test, desc: "Blind-test preference for looks-right / is-good / ready-to-ship"}
 
-# ---------------------------------------------------------------- 原语
+# ---------------------------------------------------------------- Primitives
 primitives:
-  # ===== 分析（拉片）=====
+  # ===== Analysis (decomposition) =====
   - id: analyze.video_understanding
     group: analyze
-    name: 视频语义理解
+    name: Video semantic understanding
     inputs: [video, audio, text]
     output: structured_text
-    use_when: 理解镜头意图、表演、风格、叙事结构；生成镜头描述与提示词草稿
-    probe: 给定带人工标注的镜头集，测镜头描述准确率、时间定位误差、计数类问题正确率
+    use_when: Understanding a shot's intent, performance, style, and narrative structure; drafting shot descriptions and prompts
+    probe: Given a manually annotated shot set, measure shot-description accuracy, time-localization error, and correctness on counting-type questions
   - id: analyze.shot_boundary
     group: analyze
-    name: 切镜检测
+    name: Shot-boundary detection
     inputs: [video]
     output: timestamps
-    use_when: 所有视频的第一步
+    use_when: The first step for every video
     metrics: [cut_alignment]
-    probe: 硬切/溶解/遮挡转场混合样本的切点 F1
+    probe: Cut-point F1 on a mixed sample of hard cuts / dissolves / occlusion transitions
   - id: analyze.asr_word_align
     group: analyze
-    name: 语音识别 + 字级对齐
+    name: Speech recognition + word-level alignment
     inputs: [audio]
     output: transcript_with_word_times
-    use_when: 有人声的视频；给字幕、口播、卡点提供词锚点
-    probe: 中英混说、方言样本的 CER 与词边界误差
+    use_when: A video with voice; provides word anchors for subtitles, talking-head, and beat-sync
+    probe: CER and word-boundary error on code-switched Chinese/English and dialect samples
   - id: analyze.ocr_text_track
     group: analyze
-    name: 画面文字识别与轨迹
+    name: On-screen text recognition and tracking
     inputs: [video]
     output: text_tracks
-    use_when: 识别字幕、标题、UI 文字及其出现/消失/移动，供代码层重建
-    probe: 运动文字、描边文字、复杂背景中文文字的识别率与框精度
+    use_when: Recognizing subtitles, titles, and UI text and when they appear/disappear/move, for rebuilding the code layer
+    probe: Recognition rate and box accuracy for moving text, outlined text, and Chinese text on a complex background
   - id: analyze.segmentation
     group: analyze
-    name: 分割与跟踪
+    name: Segmentation and tracking
     inputs: [video, text]
     output: masks
-    use_when: 分离主体/商品/背景，测量元素轨迹
+    use_when: Separating subject/product/background, measuring element trajectories
   - id: analyze.matting
     group: analyze
-    name: 视频抠像（alpha）
+    name: Video matting (alpha)
     inputs: [video]
     output: video_with_alpha
-    use_when: 需要透明前景（人物叠加到新背景、字幕穿插人物后方）
+    use_when: A transparent foreground is needed (compositing a person onto a new background, subtitles passing behind a person)
   - id: analyze.camera_motion
     group: analyze
-    name: 相机运动反解
+    name: Camera-motion recovery
     inputs: [video]
     output: camera_trajectory
-    use_when: 判断推拉摇移、手持感、3D 运镜，作为生成运镜或 3D 渲染的依据
+    use_when: Determining push/pull/pan/tilt, handheld feel, or 3D camera moves, as a basis for generated camera work or 3D rendering
   - id: analyze.audio_separation
     group: analyze
-    name: 音频分轨
+    name: Audio stem separation
     inputs: [audio]
     output: stems
-    use_when: 分离人声 / BGM / 音效，分别分析与替换
+    use_when: Separating voice / BGM / sound effects for individual analysis and replacement
   - id: analyze.beat_tempo
     group: analyze
-    name: 节拍与段落分析
+    name: Beat and section analysis
     inputs: [audio]
     output: beat_grid
-    use_when: 音乐卡点视频；给剪辑节奏提供节拍锚点
+    use_when: Beat-synced music videos; provides beat anchors for the cutting rhythm
   - id: analyze.depth_video
     group: analyze
-    name: 视频深度估计
+    name: Video depth estimation
     inputs: [video]
     output: video
-    use_when: 舞蹈、打斗等动作镜头复刻：把原片转成灰度深度视频当驱动，保留动作、走位、空间和运镜，去掉原来的人长什么样、穿什么
+    use_when: Remaking dance, fighting, and other action shots — convert the original into a grayscale depth video to use as a driver, keeping the motion, blocking, space, and camera work while discarding what the original person looked like and wore
     metrics: [motion_trajectory_error]
-    probe: 快速转身、手部交叠、多人遮挡片段的逐帧闪烁和肢体缺失
+    probe: Per-frame flicker and missing limbs on fast-turn, hand-overlap, and multi-person-occlusion segments
   - id: analyze.pose_track
     group: analyze
-    name: 人体骨骼跟踪
+    name: Human skeleton tracking
     inputs: [video]
     output: keypoints
-    use_when: 目标角色和原舞者体型差很多（Q 版、动物、卡通）时，用骨骼而不是深度当驱动，体型不会被带过去
+    use_when: When the target character's body type is very different from the original dancer's (chibi, animal, cartoon), drive with the skeleton instead of depth so the body shape isn't carried over
     metrics: [motion_trajectory_error]
   - id: analyze.body_mocap
     group: analyze
-    name: 单目视频动捕
+    name: Monocular video motion capture
     inputs: [video]
     output: animation
-    use_when: 动作要改机位、反复用或在 3D 里改时，把原片动作转成 FBX / BVH，绑到白模上重新渲染
+    use_when: When the action needs a different camera angle, needs reuse, or needs editing in 3D — convert the original motion to FBX/BVH and rig it onto a white model for re-rendering
     metrics: [motion_trajectory_error]
   - id: analyze.image_layer_decompose
     group: analyze
-    name: 单帧图层分解
+    name: Single-frame layer decomposition
     inputs: [image]
     output: layered_images
-    use_when: 把一帧拆成背景 + 透明元素层，用于理解或替换版式
+    use_when: Splitting one frame into a background plus transparent element layers, for understanding or replacing a layout
 
-  # ===== 图像 =====
+  # ===== Image =====
   - id: image.t2i
     group: image
-    name: 文生图
+    name: Text-to-image
     inputs: [text]
     output: image
-    use_when: 生成关键帧、角色设定、B-roll 静帧
+    use_when: Generating keyframes, character turnarounds, B-roll stills
     metrics: [perceptual_similarity]
   - id: image.edit_multi_ref
     group: image
-    name: 多参考图像编辑/合成
+    name: Multi-reference image editing/compositing
     inputs: [image, text]
     output: image
-    use_when: 把商品/人物/场景参考合成为首帧；换装换物；保持身份一致
+    use_when: Compositing product/person/scene references into a first frame; outfit/object swaps; keeping identity consistent
     metrics: [identity_consistency, perceptual_similarity]
-    probe: 同一商品在 5 个场景中的外观一致性
+    probe: Appearance consistency of the same product across 5 scenes
   - id: image.text_render
     group: image
-    name: 画内文字渲染
+    name: On-screen text rendering
     inputs: [text, image]
     output: image
-    use_when: 画面中有招牌、包装、海报等实物文字（尤其中文）
+    use_when: The frame has physical text like a sign, packaging, or a poster (especially Chinese)
     metrics: [text_render_accuracy]
-    probe: 20 条中文短语（含生僻字、竖排、混排）渲染正确率
+    probe: Rendering accuracy on 20 Chinese phrases (including rare characters, vertical text, mixed layout)
   - id: image.storyboard_series
     group: image
-    name: 分镜组图
+    name: Storyboard image set
     inputs: [text, image]
     output: images
-    use_when: 一次产出风格一致的多张分镜关键帧供确认
+    use_when: Producing multiple style-consistent storyboard keyframes at once for approval
   - id: image.tryon
     group: image
-    name: 虚拟试穿
+    name: Virtual try-on
     inputs: [image]
     output: image
-    use_when: 服装电商换装：人物图 + 服装图 → 上身图，再进入图生视频
+    use_when: "Apparel e-commerce outfit changes: person photo + clothing photo → a photo wearing it, which then feeds image-to-video"
     metrics: [identity_consistency]
 
-  # ===== 视频生成 / 编辑 =====
+  # ===== Video generation / editing =====
   - id: video.t2v
     group: video
-    name: 文生视频
+    name: Text-to-video
     inputs: [text]
     output: video
-    use_when: 氛围空镜、无特定主体的 B-roll
+    use_when: Mood filler shots, B-roll with no specific subject
     metrics: [perceptual_similarity]
   - id: video.i2v_first_frame
     group: video
-    name: 图生视频（首帧）
+    name: Image-to-video (first frame)
     inputs: [image, text]
     output: video
-    use_when: 构图/商品/人物必须准确时，先定首帧再动起来
+    use_when: When composition/product/person must be exact, fix the first frame before setting it in motion
     metrics: [perceptual_similarity, identity_consistency]
   - id: video.i2v_first_last
     group: video
-    name: 首尾帧生成
+    name: First/last-frame generation
     inputs: [image, image, text]
     output: video
-    use_when: 起止状态都确定的镜头；变装/转场；与上一段尾帧衔接
+    use_when: A shot with both a fixed start and end state; an outfit change/transition; connecting to the previous segment's last frame
     metrics: [perceptual_similarity, identity_consistency]
   - id: video.keyframes
     group: video
-    name: 多关键帧控制
+    name: Multi-keyframe control
     inputs: [images, text]
     output: video
-    use_when: 复杂运镜或多个中间状态必须命中
+    use_when: A complex camera move or several in-between states that must land exactly
     metrics: [perceptual_similarity, camera_path_error]
   - id: video.multi_reference
     group: video
-    name: 多参考生视频（主体一致）
+    name: Multi-reference video generation (subject-consistent)
     inputs: [images, text]
     output: video
-    use_when: 同一角色/商品跨多个镜头一致；多主体同框
+    use_when: The same character/product must be consistent across multiple shots; multiple subjects in one frame
     metrics: [identity_consistency]
-    probe: 3 个角色参考 × 4 个镜头的身份保持率
+    probe: Identity-retention rate across 3 character references × 4 shots
   - id: video.reference_video
     group: video
-    name: 参考视频生成（动作/运镜/特效迁移）
+    name: Reference-video generation (motion/camera-work/effect transfer)
     inputs: [video, images, text]
     output: video
-    use_when: 原片的时间行为（动作节奏、运镜、特效演化）无法用文字和静帧描述时
+    use_when: The original's time-based behavior (motion rhythm, camera work, effect evolution) can't be described with text and still frames
     metrics: [motion_trajectory_error, camera_path_error]
   - id: video.reference_audio
     group: video
-    name: 参考音频生成
+    name: Reference-audio generation
     inputs: [audio, images, text]
     output: video
-    use_when: 让画面跟随给定音频（音乐节奏、指定声音）
+    use_when: Making the picture follow a given audio track (music rhythm, a specified sound)
     metrics: [beat_alignment]
   - id: video.multi_shot
     group: video
-    name: 单次多镜头
+    name: Multiple shots per call
     inputs: [text, images]
     output: video
-    use_when: 同角色同场景的连续多个镜头，一次生成以获得一致性与自然转场
+    use_when: Several consecutive shots with the same character and scene, generated in one call for consistency and natural transitions
     metrics: [cut_alignment, identity_consistency]
   - id: video.extend
     group: video
-    name: 续写延长
+    name: Continuation / extension
     inputs: [video, text]
     output: video
-    use_when: 超过单次时长上限的连续镜头
+    use_when: A continuous shot longer than the single-call duration limit
   - id: video.edit_v2v
     group: video
-    name: 视频编辑（保留运动）
+    name: Video editing (motion-preserving)
     inputs: [video, images, text]
     output: video
-    use_when: 在已有画面上换人/换物/换风格/换背景/重打光，保留原动作与时序
+    use_when: Swapping a person/object/style/background or relighting existing footage, while keeping the original motion and timing
     metrics: [motion_trajectory_error, identity_consistency]
   - id: video.camera_control
     group: video
-    name: 运镜与镜头参数控制
+    name: Camera-work and lens-parameter control
     inputs: [text, image, video]
     output: video
-    use_when: 需要指定推拉摇移、焦段、景深或改变已有镜头机位
+    use_when: Needing to specify push/pull/pan/tilt, focal length, depth of field, or change an existing shot's camera position
     metrics: [camera_path_error]
   - id: video.native_audio
     group: video
-    name: 音画同出
+    name: Picture-and-sound generated together
     inputs: [text, images, audio]
     output: video_with_audio
-    use_when: 对白/环境声与画面强耦合的镜头
+    use_when: A shot where dialogue/ambient sound is tightly coupled to the picture
     metrics: [lip_sync, speech_wer]
 
-  # ===== 人物驱动 =====
+  # ===== Character driving =====
   - id: video.control_video
     group: video
-    name: 控制视频驱动生成
+    name: Control-video-driven generation
     inputs: [video, image, text]
     output: video
-    use_when: 用深度、骨骼或线稿视频逐帧锁住动作和结构，参考图给角色外观（舞蹈、打斗的本地开源流程）
+    use_when: Using a depth, skeleton, or line-art video to lock motion and structure frame by frame, with a reference image for character appearance (the local open-source pipeline for dance and fight scenes)
     metrics: [motion_trajectory_error, identity_consistency]
   - id: motion.transfer
     group: character
-    name: 动作迁移
+    name: Motion transfer
     inputs: [video, image]
     output: video
-    use_when: 舞蹈、变装、特定手势、卡点动作需要精确复刻到新角色
+    use_when: Dance, outfit changes, a specific gesture, or a beat-synced move that needs to be reproduced exactly on a new character
     metrics: [motion_trajectory_error, identity_consistency]
   - id: avatar.audio_driven
     group: character
-    name: 音频驱动数字人
+    name: Audio-driven digital avatar
     inputs: [image, audio, text]
     output: video
-    use_when: 正面口播、长时间讲解
+    use_when: A frontal talking-head, long-form explanation
     metrics: [lip_sync, identity_consistency]
   - id: lipsync.redub
     group: character
-    name: 口型重配
+    name: Lip-sync redub
     inputs: [video, audio]
     output: video
-    use_when: 已有表演换台词/换语言，只改嘴型
+    use_when: Changing the lines/language of an existing performance, changing only the mouth shape
     metrics: [lip_sync]
 
   # ===== 3D =====
   - id: threed.image_to_3d
     group: threed
-    name: 图生 3D
+    name: Image-to-3D
     inputs: [images]
     output: mesh
-    use_when: 商品需要多角度一致、转台展示，或给视频模型提供白模参考
+    use_when: A product needs multi-angle consistency, a turntable display, or a white-model reference for a video model
     metrics: [identity_consistency]
 
-  # ===== 音频 =====
+  # ===== Audio =====
   - id: audio.tts
     group: audio
-    name: 语音合成
+    name: Speech synthesis
     inputs: [text]
     output: audio
     metrics: [speech_wer]
   - id: audio.voice_clone
     group: audio
-    name: 音色克隆
+    name: Voice cloning
     inputs: [audio, text]
     output: audio
-    use_when: 使用自己的/授权的音色做旁白或口播
+    use_when: Using one's own/licensed voice for narration or talking-head
     metrics: [speech_wer]
   - id: audio.tts_duration_control
     group: audio
-    name: 时长可控配音
+    name: Duration-controlled dubbing
     inputs: [text, audio]
     output: audio
-    use_when: 新配音必须塞进原片时间窗（对口型、对画面）
+    use_when: New dubbing must fit exactly into the original time window (lip sync, matching the picture)
     metrics: [audio_duration_match, speech_wer]
   - id: audio.music_gen
     group: audio
-    name: 音乐生成
+    name: Music generation
     inputs: [text, audio]
     output: audio
-    use_when: 需要与原片 BPM/情绪/结构相近、但可商用的新配乐
+    use_when: Needing new, commercially usable music close to the original's BPM/mood/structure
     metrics: [beat_alignment]
   - id: audio.sfx_gen
     group: audio
-    name: 文生音效
+    name: Text-to-sound-effect
     inputs: [text]
     output: audio
   - id: audio.v2a_foley
     group: audio
-    name: 视频生音效（Foley）
+    name: Video-to-sound-effect (Foley)
     inputs: [video, text]
     output: audio
-    use_when: 给生成画面自动配与动作同步的音效
+    use_when: Automatically adding sound effects synced to motion for generated footage
 
-  # ===== 代码渲染 =====
+  # ===== Code render =====
   - id: render.code_graphics
     group: render
-    name: 代码渲染动效
+    name: Code-rendered motion graphics
     inputs: [code, data]
     output: video_with_alpha
-    use_when: 文字、UI、图表、MG、字幕——需要 100% 准确且可改
+    use_when: Text, UI, charts, motion graphics, subtitles — anything that needs to be 100% accurate and editable
     metrics: [ocr_text_match, layout_iou, timing_curve_error, pixel_similarity]
   - id: render.web_capture
     group: render
-    name: 网页/界面录制
+    name: Web page/UI recording
     inputs: [url, script]
     output: video
-    use_when: 产品界面演示：直接驱动真实或重建的 UI 录屏
+    use_when: "Product UI demos: directly drive and record a real or rebuilt UI"
   - id: render.3d_scene
     group: render
-    name: 3D 场景渲染
+    name: 3D scene rendering
     inputs: [mesh, camera_trajectory]
     output: video
-    use_when: 商品转台、精确运镜、白模参考
+    use_when: Product turntables, precise camera work, white-model reference
   - id: render.compose
     group: render
-    name: 合成与编码
+    name: Compositing and encoding
     inputs: [video, audio, video_with_alpha]
     output: video
-    use_when: 多层叠加、转场、混音、最终编码
+    use_when: Layering multiple elements, transitions, mixing, final encode
 
-  # ===== 后期 =====
+  # ===== Post-production =====
   - id: post.upscale
     group: post
-    name: 视频超分
+    name: Video upscaling
     inputs: [video]
     output: video
-    use_when: 低分辨率草稿（如 480p）确认后放大到 1080p/4K
+    use_when: Upscaling a confirmed low-resolution draft (e.g. 480p) to 1080p/4K
   - id: post.frame_interp
     group: post
-    name: 补帧
+    name: Frame interpolation
     inputs: [video]
     output: video
-    use_when: 帧率不足、慢动作
+    use_when: Insufficient frame rate, slow motion

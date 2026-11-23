@@ -1,6 +1,6 @@
-# 视频生成 / 编辑模型
-# 字段说明见 ../README.md；规格大多来自厂商公告或第三方汇总，status/verified/confidence 标明可信度。
-# 价格单位 usd_per_s 为第三方列价折算，仅作路由时的相对成本参考。
+# Video generation / editing models
+# See ../README.md for field descriptions; most specs come from vendor announcements or third-party roundups — status/verified/confidence indicate reliability.
+# The usd_per_s cost unit is converted from third-party listed prices, only a relative-cost reference for routing.
 
 models:
   - id: seedance-2.5
@@ -15,20 +15,20 @@ models:
       duration_s: {max: 30}
       resolutions: [480p, 720p, 1080p]
       refs: {image: 30, video: 10, audio: 10}
-      # 首帧 / 首尾帧 和 参考图 / 参考视频 / 参考音频 不能放在同一个请求里（多家接口文档一致；即梦 App 的「全能参考」可用 @图片 作为首帧）
+      # first/last frame and reference image/video/audio can't be in the same request (consistent across several vendor docs; Jimeng App's "omni-reference" can use @Image as a first frame)
       exclusive_inputs: [[video.i2v_first_frame, video.i2v_first_last], [video.multi_reference, video.reference_video, video.reference_audio]]
     audio: {native: true}
     strengths:
-      - 单次 30 秒，内含多个逻辑连贯的镜头
-      - 一次可传 30 图 + 10 视频 + 10 音频参考；支持 clay render（无纹理 3D 白模）、动作、创意参考
-      - 时间戳级局部编辑、绿幕换背景、改机位、续写延长（可到数分钟）
-      - 国内电商复刻产品（OiiOii、Hypit）的主力模型
+      - A single call produces 30 seconds containing multiple logically-connected shots
+      - "Up to 30 images + 10 videos + 10 audio references per call; supports clay render (textureless 3D white model), motion, and creative reference"
+      - Timestamp-level local edits, green-screen background swap, camera-position change, continuation/extension (up to several minutes)
+      - "The go-to model for product remakes in China's e-commerce AI tooling (OiiOii, Hypit)"
     weaknesses:
-      - 官方承认复杂动作的物理合理性、多主体互动的稳定性仍有不足
-      - 官方未公布最大分辨率；Hypit 的 HypiHub 通道提供 480p/720p/1080p
+      - "The vendor admits physical plausibility of complex motion and stability of multi-subject interaction still have gaps"
+      - Max resolution isn't officially published; Hypit's HypiHub channel offers 480p/720p/1080p
     cost:
-      note: 实测参考：OiiOii 复刻 50 秒电商视频约 40 元（480p 生成后超分到 1080p）
-    license: {commercial: true, note: 以平台条款为准}
+      note: "Measured reference: OiiOii remade a 50-second e-commerce video for about ¥40 (generated at 480p, then upscaled to 1080p)"
+    license: {commercial: true, note: "Per the platform's terms"}
     sources:
       - https://seed.bytedance.com/en/blog/one-take-creation-flexible-referencing-introducing-seedance-2-5
       - https://github.com/hypit-ai/hypit/blob/main/packages/provider-hypihub/README.md
@@ -47,26 +47,26 @@ models:
     primitives: [video.t2v, video.i2v_first_frame, video.i2v_first_last, video.multi_reference, video.reference_video, video.reference_audio, video.native_audio]
     limits:
       resolutions: [480p, 720p]
-      # 首帧 / 首尾帧 和 参考素材 不能同传：按 Seedance 2.5 推断，Flash 没有单独说明
+      # first/last frame and reference material can't be passed together: inferred from Seedance 2.5, Flash doesn't document this separately
       exclusive_inputs: [[video.i2v_first_frame, video.i2v_first_last], [video.multi_reference, video.reference_video, video.reference_audio]]
     audio: {native: true}
     strengths:
-      - 比 Seedance 2.5 便宜约三分之一、快约一倍，适合出草稿
-      - 和 2.5 一样有首尾帧和全能参考两种模式
+      - About a third cheaper and twice as fast as Seedance 2.5, good for drafts
+      - Has the same two modes as 2.5 — first/last frame and omni-reference
     weaknesses:
-      - 最高 720p
-      - 时长和参考数量上限官方没公布，不要照搬 2.5 的数字
-    cost: {usd_per_s: 0.152, note: 720p 约 0.152 美元/秒（单一来源）}
-    license: {commercial: conditional, note: 未找到官方商用条款，以平台条款为准}
+      - Tops out at 720p
+      - Duration and reference-count limits aren't published — don't assume they match 2.5's numbers
+    cost: {usd_per_s: 0.152, note: "About $0.152/s at 720p (single source)"}
+    license: {commercial: conditional, note: "No official commercial terms found — per the platform's terms"}
     sources:
       - https://dreamina.capcut.com/seedance/seedance-2-5-flash
       - https://cellcog.ai/blog/seedance-2-5-flash/
     verified: {date: 2026-11-12, basis: third-party}
     confidence: low
-    notes: 即梦已上线；方舟 API 据称 2026-11-15 开放（模型 ID dreamina-seedance-2-5-flash-261115），API 日期和价格只有一个来源
+    notes: "Already live in Jimeng; the Ark API is reportedly opening 2026-11-15 (model ID dreamina-seedance-2-5-flash-261115) — the API date and price each come from only one source"
 
   - id: seedance-2.0
-    name: Seedance 2.0（含 Mini / Fast）
+    name: "Seedance 2.0 (including Mini / Fast)"
     vendor: ByteDance Seed
     category: video
     release: 2026-02
@@ -77,17 +77,17 @@ models:
       duration_s: {min: 4, max: 15}
       resolutions: [720p, 1080p]
       refs: {image: 9, video: 3, audio: 3}
-      ref_video_s: {max: 15}   # 参考视频总长
-      # 首帧 / 首尾帧 和 参考素材 不能放在同一个请求里；即梦 App 的「全能参考」可用 @图片 作为首帧
+      ref_video_s: {max: 15}   # total reference-video length
+      # first/last frame and reference material can't be in the same request; Jimeng App's "omni-reference" can use @Image as a first frame
       exclusive_inputs: [[video.i2v_first_frame, video.i2v_first_last], [video.multi_reference, video.reference_video, video.reference_audio]]
     audio: {native: true}
     strengths:
-      - 成本低；Mini 720p 被 Hypit 用作 A-roll / B-roll 主力（单条视频总成本约 1.1 美元）
-      - 一次可出多个镜头：在提示词里按镜头编号写（不支持逐镜时间戳）
+      - "Low cost; Mini 720p is Hypit's workhorse for A-roll/B-roll (about $1.10 total per video)"
+      - Can produce multiple shots per call — written by shot number in the prompt (no per-shot timestamps)
     weaknesses:
-      - 单次时长短于 2.5；参考视频、参考音频总长各不超过 15 秒
-    cost: {usd_per_s: 0.15, note: "第三方列价约 9.07 美元/分钟"}
-    license: {commercial: true, note: 以平台条款为准}
+      - Shorter single-call duration than 2.5; reference video and reference audio are each capped at 15 seconds total
+    cost: {usd_per_s: 0.15, note: "Third-party listed price around $9.07/minute"}
+    license: {commercial: true, note: "Per the platform's terms"}
     sources:
       - https://tech-insider.org/best-ai-video-generator-2026/
       - https://en.wikipedia.org/wiki/Seedance_2.0
@@ -99,7 +99,7 @@ models:
     confidence: medium
 
   - id: kling-4.0
-    name: Kling 4.0（可灵 4.0）
+    name: Kling 4.0
     vendor: Kuaishou
     category: video
     release: 2026-10
@@ -114,27 +114,27 @@ models:
       keyframes: 10
     audio: {native: true, voice_ref: true}
     strengths:
-      - 首尾帧 + 最多 10 张关键帧，复杂运镜和中间状态可控
-      - Omni Reference 最多 15 个参考（10 图、5 段视频合计 30 秒、7 个 element）
-      - 视频编辑：表情、肢体、机位、风格、背景、角色均可改（最多 5 段输入、合计 30 秒）
-      - 立体声，多语种对白与口音；屏幕文字支持多语种和 emoji
-      - 画幅 21:9 / 16:9 / 1:1 / 9:16
-      - 默认自动分镜，镜头按时间直接写在提示词里
+      - "First/last frame plus up to 10 keyframes — controllable complex camera work and in-between states"
+      - "Omni Reference takes up to 15 references total (10 images, 5 video clips totaling 30 seconds, 7 elements)"
+      - "Video editing: expression, limbs, camera position, style, background, and character can all be changed (up to 5 input clips, 30 seconds total)"
+      - Stereo audio, multilingual dialogue and accents; on-screen text supports multiple languages and emoji
+      - "Aspect ratios 21:9 / 16:9 / 1:1 / 9:16"
+      - Auto-splits into shots by default, with shots written directly in the prompt by time
     weaknesses:
-      - 10-bit HDR 与续写（最长 2 分钟）还没上线
-      - 音频参考只能当声音参考
-    cost: {usd_per_s: 0.235, note: "fal 列价 720p 0.157、1080p 0.235 美元/秒；官方 API 价未公布"}
-    license: {commercial: true, note: 以平台条款为准}
+      - 10-bit HDR and continuation (up to 2 minutes) aren't live yet
+      - An audio reference can only serve as a voice reference
+    cost: {usd_per_s: 0.235, note: "fal's listed price: $0.157/s at 720p, $0.235/s at 1080p; the official API price isn't published"}
+    license: {commercial: true, note: "Per the platform's terms"}
     sources:
       - https://fal.ai/learn/tools/what-is-kling-4-0
       - https://kling.ai/quickstart/kling-4-model-user-guide
       - https://kling.ai/document-api/updates/api.md
     verified: {date: 2026-11-12, basis: vendor}
     confidence: medium
-    notes: App 2026-10-15 正式上线，官方 API 2026-10-28 全面开放；续写（最长 2 分钟）和 10-bit HDR 仍是 coming soon；Flash 版单独成条（kling-4.0-flash）
+    notes: "The app launched 2026-10-15, the official API opened fully 2026-10-28; continuation (up to 2 minutes) and 10-bit HDR are still coming soon; the Flash version has its own entry (kling-4.0-flash)"
 
   - id: kling-4.0-flash
-    name: Kling 4.0 Flash（可灵 4.0 Flash）
+    name: Kling 4.0 Flash
     vendor: Kuaishou
     category: video
     release: 2026-09
@@ -147,23 +147,23 @@ models:
       prompt_tokens: 8000
     audio: {native: true, voice_ref: true}
     strengths:
-      - 便宜、出得快，适合先出草稿；参考图、参考视频、声音参考的用法和 4.0 相同
-      - 默认自动分镜，立体声
+      - "Cheap and fast, good for an early draft; reference images, reference videos, and voice references work the same way as 4.0"
+      - Auto-splits into shots by default, stereo audio
     weaknesses:
-      - 只有 720p、8-bit SDR
-      - 不支持首尾帧和多关键帧，构图只能靠首帧或参考图锁住
-    cost: {usd_per_s: 0.094, note: 第三方列价}
-    license: {commercial: true, note: 以平台条款为准}
+      - "720p only, 8-bit SDR"
+      - Doesn't support first/last-frame or multiple keyframes — composition can only be locked via the first frame or a reference image
+    cost: {usd_per_s: 0.094, note: "Third-party listed price"}
+    license: {commercial: true, note: "Per the platform's terms"}
     sources:
       - https://kling.ai/quickstart/kling-4-model-user-guide
       - https://kling.ai/document-api/updates/api.md
       - https://www.llmreference.com/model/kling-4.0-flash
     verified: {date: 2026-11-12, basis: vendor}
     confidence: medium
-    notes: 2026-09-28 限量开放，官方 API 2026-11-04 开放；参考素材数量上限是否和 4.0 相同没有确认
+    notes: "Limited rollout 2026-09-28, official API opened 2026-11-04; whether the reference-material count limits match 4.0's isn't confirmed"
 
   - id: kling-3.0
-    name: Kling 3.0（含 Turbo）
+    name: "Kling 3.0 (including Turbo)"
     vendor: Kuaishou
     category: video
     release: 2026-02
@@ -176,13 +176,13 @@ models:
       shots_per_generation: 6
     audio: {native: true, voice_ref: true}
     strengths:
-      - 单次最多 6 个镜头；起始帧加参考图，保持角色造型和五官
-      - Voice ID 跨镜头保持角色声音；复杂物理、快速运动、运镜表现好
-      - Turbo Pro 改进了口型与多镜头
+      - Up to 6 shots per call; a starting frame plus a reference image keeps character look and features consistent
+      - Voice ID keeps a character's voice consistent across shots; good at complex physics, fast motion, and camera work
+      - Turbo Pro improved lip sync and multi-shot handling
     weaknesses:
-      - API 价格偏高
-    cost: {usd_per_s: 0.34, note: "720p 约 15.12 美元/分钟，1080p 约 20.16 美元/分钟（第三方列价）"}
-    license: {commercial: true, note: 以平台条款为准}
+      - API pricing runs high
+    cost: {usd_per_s: 0.34, note: "About $15.12/minute at 720p, $20.16/minute at 1080p (third-party listed price)"}
+    license: {commercial: true, note: "Per the platform's terms"}
     sources:
       - https://help.artlist.io/hc/en-us/articles/37026869403933-Kling-3-Model-Family
       - https://tech-insider.org/best-ai-video-generator-2026/
@@ -190,7 +190,7 @@ models:
     confidence: medium
 
   - id: kling-o3
-    name: Kling O3（Omni）
+    name: "Kling O3 (Omni)"
     vendor: Kuaishou
     category: video
     release: 2026-03
@@ -202,19 +202,19 @@ models:
       resolutions: [720p, 1080p, 4K]
     audio: {native: false}
     strengths:
-      - 视频改视频：换角色或道具、重新风格化、重打光，保留原动作
-      - Element 参考一致性更强；Director Mode 可组合文本、首尾帧、参考图和角色视频
+      - "Video-to-video: swap a character or prop, restyle, or relight, while keeping the original motion"
+      - Stronger element-reference consistency; Director Mode can combine text, first/last frame, reference images, and a character video
     weaknesses:
-      - 编辑在短片段上效果更好
-    license: {commercial: true, note: 以平台条款为准}
+      - Editing works better on short clips
+    license: {commercial: true, note: "Per the platform's terms"}
     sources:
       - https://help.artlist.io/hc/en-us/articles/37026869403933-Kling-3-Model-Family
     verified: {date: 2026-10-29, basis: third-party}
     confidence: medium
-    notes: 发布月份为估计值；音频能力资料未提及
+    notes: "Release month is an estimate; audio capability isn't documented"
 
   - id: veo-3.1
-    name: Veo 3.1（含 Lite）
+    name: "Veo 3.1 (including Lite)"
     vendor: Google
     category: video
     release: 2025-10
@@ -227,13 +227,13 @@ models:
       refs: {image: 4}
     audio: {native: true}
     strengths:
-      - 提示词遵循与真人写实强；企业级（GCP、SLA、SynthID）
-      - 支持首尾帧；Ingredients to Video 支持角色、物体、背景或风格参考（仅限 8 秒；参考图数量第三方说法为 3–4 张）
-      - 独立的 Extend 变体可以给 2–30 秒的视频追加 7 秒
+      - Strong prompt adherence and realistic humans; enterprise-grade (GCP, SLA, SynthID)
+      - "Supports first/last frame; Ingredients to Video supports character, object, background, or style references (8 seconds only; sources disagree on 3–4 reference images)"
+      - "A separate Extend variant can append 7 seconds to a 2–30 second video"
     weaknesses:
-      - 单段只有 4/6/8 秒
-      - 价格最高
-    cost: {usd_per_s: 0.40, note: "Lite 约 0.08 美元/秒"}
+      - A single segment is only 4/6/8 seconds
+      - The most expensive in its class
+    cost: {usd_per_s: 0.40, note: "Lite is about $0.08/s"}
     license: {commercial: true}
     sources:
       - https://tech-insider.org/best-ai-video-generator-2026/
@@ -244,7 +244,7 @@ models:
       - https://aistudio.google.com/docs/deprecations
     verified: {date: 2026-10-29, basis: third-party}
     confidence: medium
-    notes: Gemini API 的预览版（含 Lite）2026-10-22 下线，官方建议换 gemini-omni-1.2-flash；Vertex AI 上的正式版 veo-3.1-generate-001 还没有下线日期；Lite 2026-03-31 发布，只有文生、图生，720p / 1080p；一段里可以按时间戳写多个镜头
+    notes: "The Gemini API preview (Lite included) was removed 2026-10-22, with the vendor recommending gemini-omni-1.2-flash instead; the Vertex AI release version veo-3.1-generate-001 has no removal date yet; Lite was released 2026-03-31, text-to-video and image-to-video only, 720p/1080p; multiple shots can be written by timestamp within one segment"
 
   - id: grok-imagine-video-1.5
     name: Grok Imagine Video 1.5
@@ -261,13 +261,13 @@ models:
       keyframes: 4
     audio: {native: true, voice_ref: true}
     strengths:
-      - 首帧、尾帧、中间关键帧可以和参考图放在同一个请求里
-      - 最多 14 张参考图；9 种画幅（含 21:9、5:2）
+      - First frame, last frame, and in-between keyframes can go in the same request as reference images
+      - "Up to 14 reference images; 9 aspect ratios (including 21:9, 5:2)"
     weaknesses:
-      - 参考生视频最高 720p
-      - 声音参考只能选 3 个预设音色，自定义音频只对合作方开放
+      - Reference-to-video tops out at 720p
+      - "A voice reference can only pick from 3 preset timbres — custom audio is partner-only"
     cost: {usd_per_s: 0.08}
-    license: {commercial: conditional, note: 未找到官方商用条款，以平台条款为准}
+    license: {commercial: conditional, note: "No official commercial terms found — per the platform's terms"}
     sources:
       - https://docs.x.ai/developers/model-capabilities/video/generation
       - https://docs.x.ai/developers/model-capabilities/video/reference-to-video
@@ -275,7 +275,7 @@ models:
       - https://www.techtimes.com/articles/318635/20260618/grok-imagine-video-15-goes-live-xai-tops-ai-video-leaderboard-86-percent-below-sora.htm
     verified: {date: 2026-11-12, basis: vendor}
     confidence: medium
-    notes: 2026-06-16 正式发布，07-31 加入文生视频；关键帧按 1/3 秒对齐、必须在片段内部；图生视频的画幅跟输入图
+    notes: "Officially released 2026-06-16, text-to-video added 07-31; keyframes align to 1/3-second increments and must fall inside the clip; image-to-video output ratio follows the input image"
 
   - id: grok-imagine-video-1.5-lite
     name: Grok Imagine Video 1.5 Lite
@@ -290,11 +290,11 @@ models:
       resolutions: [480p, 720p, 1080p]
     audio: {native: true}
     strengths:
-      - xAI 最便宜的一档，官方说适合简单的视频
+      - xAI's cheapest tier — the vendor says it's good for simple video
     weaknesses:
-      - 只收首帧，没有尾帧和参考图；1080p 是从 720p 放大的
-    cost: {usd_per_s: 0.02, note: 第三方列价 480p 0.02、720p 0.03、1080p 0.14 美元/秒}
-    license: {commercial: conditional, note: 未找到官方商用条款，以平台条款为准}
+      - Only accepts a first frame, no last frame or reference images; 1080p is upscaled from 720p
+    cost: {usd_per_s: 0.02, note: "Third-party listed price: $0.02/s at 480p, $0.03/s at 720p, $0.14/s at 1080p"}
+    license: {commercial: conditional, note: "No official commercial terms found — per the platform's terms"}
     sources:
       - https://docs.x.ai/docs/models
       - https://runware.ai/docs/models/xai-grok-imagine-video-1-5-lite.md
@@ -315,15 +315,15 @@ models:
       refs: {image: 6}
     audio: {native: true}
     strengths:
-      - 文本、图像、音频、视频任意组合输入；草图可作为动作引导
-      - 对话式多轮编辑，场景状态延续不重置
-      - 第三方榜单中文生视频（含音频）排名第一（Elo 约 1233）
+      - Any combination of text, image, audio, and video as input; a sketch can serve as a motion guide
+      - Conversational multi-round editing — scene state carries over without resetting
+      - "#1 on a third-party text-to-video (with audio) leaderboard (Elo around 1233)"
     weaknesses:
-      - 单段 3–15 秒，首尾帧和续写每次 3–10 秒
-      - 默认会自己切镜，要单镜头得在提示词里写明
-      - 不收音频参考
-      - 物理一致性仍有瑕疵
-      - 输出带 SynthID 和 C2PA 标记
+      - "A single segment is 3–15 seconds; first/last frame and continuation are 3–10 seconds per call"
+      - Auto-splits into shots by default — a single shot has to be stated explicitly in the prompt
+      - Doesn't accept an audio reference
+      - Physical consistency still has rough edges
+      - Output carries SynthID and C2PA marks
     cost: {usd_per_s: 0.10}
     license: {commercial: true}
     sources:
@@ -333,11 +333,11 @@ models:
       - https://aistudio.google.com/docs/changelog
     verified: {date: 2026-11-12, basis: vendor}
     confidence: medium
-    notes: 2026-05-19 发布（Gemini App、Flow）；API 版本 1.1 于 2026-08-27 正式发布（加入续写、首尾帧、4K），1.2 于 2026-11-05 发布（最长 15 秒、最多 6 张参考图、降价 30%），2026-12-03 起 1.1 的请求转到 1.2；当前 API ID gemini-omni-1.2-flash；Omni Pro 尚未发布
+    notes: "Released 2026-05-19 (Gemini App, Flow); API version 1.1 officially launched 2026-08-27 (added continuation, first/last frame, 4K), 1.2 launched 2026-11-05 (up to 15 seconds, up to 6 reference images, 30% price cut), 1.1 requests route to 1.2 starting 2026-12-03; current API ID gemini-omni-1.2-flash; Omni Pro hasn't been released yet"
 
   - id: vidu-q3
     name: Vidu Q3
-    vendor: Shengshu（生数科技）
+    vendor: Shengshu
     category: video
     release: 2026-04
     status: ga
@@ -347,11 +347,11 @@ models:
       duration_s: {max: 16}
     audio: {native: true}
     strengths:
-      - Reference-to-Video 主打多主体一致：主体、环境、服装、道具、风格都可以作为参考
-      - 原生音效覆盖环境声、动作音、Foley、情绪音效；内置粒子、流体、转场等 6 类特效
+      - "Reference-to-Video is built around multi-subject consistency: subject, environment, clothing, props, and style can all serve as references"
+      - Native sound effects cover ambient sound, action sound, Foley, and mood effects; has 6 built-in effect types (particles, fluid, transitions, etc.)
     weaknesses:
-      - 参考数量与分辨率未公开
-    license: {commercial: true, note: 以平台条款为准}
+      - Reference count and resolution aren't published
+    license: {commercial: true, note: "Per the platform's terms"}
     sources:
       - https://www.kosmo.com.my/2026/04/13/shengshu-launches-vidu-q3-reference-to-video-with-expanded-visual-and-audio-capabilities/
     verified: {date: 2026-10-29, basis: vendor}
@@ -359,7 +359,7 @@ models:
 
   - id: vidu-q4-preview
     name: Vidu Q4 Preview
-    vendor: Shengshu（生数科技）
+    vendor: Shengshu
     category: video
     release: 2026-10
     status: preview
@@ -371,25 +371,25 @@ models:
       refs: {image: 15, audio: 3}
     audio: {native: true, voice_ref: true}
     strengths:
-      - 表演和口型自然，台词和音效一起生成；最高 4K，2K / 4K 为 10-bit
-      - 参考生视频最多 15 张参考图加 3 段声音参考，保持角色长相和音色
-      - 会自动切镜
+      - "Natural performance and lip sync, dialogue and sound effects generated together; up to 4K, with 2K/4K at 10-bit"
+      - "Reference-to-video takes up to 15 reference images plus 3 audio references, keeping character look and voice consistent"
+      - Auto-splits into shots
     weaknesses:
-      - 没有文生视频和首尾帧：只有图生视频（一张图）和参考生视频
-      - 预览版，规格可能变；暂不支持主体库调用
-    cost: {usd_per_s: 0.045, note: 发布稿称 540p 起 0.045 美元/秒、4K 0.39 美元/秒；国内 0.09 元/秒起}
-    license: {commercial: conditional, note: 未找到官方商用条款，以平台条款为准}
+      - "No text-to-video or first/last frame — only image-to-video (single image) and reference-to-video"
+      - Preview release, specs may change; subject-library calls aren't supported yet
+    cost: {usd_per_s: 0.045, note: "The launch post says $0.045/s starting at 540p, up to $0.39/s at 4K; starting at ¥0.09/s domestically"}
+    license: {commercial: conditional, note: "No official commercial terms found — per the platform's terms"}
     sources:
       - https://platform.vidu.com/docs/api-reference/video-models/vidu-q4-preview/image-to-video
       - https://platform.vidu.com/docs/api-reference/video-models/vidu-q4-preview/reference-to-video
       - https://www.chinatechnews.com/2026/10/08/130490-shengshu-technology-launches-vidu-q4-preview-a-next-generation-ai-video-model-built-for-lifelike-performances
     verified: {date: 2026-11-12, basis: vendor}
     confidence: medium
-    notes: API 模型名 viduq4-preview
+    notes: "API model name viduq4-preview"
 
   - id: pixverse-v6
     name: PixVerse V6
-    vendor: PixVerse（爱诗科技）
+    vendor: PixVerse
     category: video
     release: 2026-03
     status: ga
@@ -400,11 +400,11 @@ models:
       resolutions: [1080p]
     audio: {native: true}
     strengths:
-      - 20 多种镜头参数（焦段、光圈、景深、畸变、色差、暗角），适合复刻有特定"镜头感"的片子
-      - 多镜头；Hypit 已接入（通过 HypiHub 支持参考视频与首尾帧）
+      - "20+ lens parameters (focal length, aperture, depth of field, distortion, chromatic aberration, vignette), good for remaking a video with a specific \"lens feel\""
+      - "Multi-shot; already integrated into Hypit (via HypiHub, supporting reference video and first/last frame)"
     weaknesses:
-      - 通过 HypiHub 时 seed 与 multi-clip 参数不可用
-    license: {commercial: true, note: 以平台条款为准}
+      - seed and multi-clip parameters aren't available through HypiHub
+    license: {commercial: true, note: "Per the platform's terms"}
     sources:
       - https://wavespeed.ai/blog/posts/pixverse-v6-ai-video-camera-control-vfx-2026/
       - https://github.com/hypit-ai/hypit/blob/main/packages/provider-hypihub/README.md
@@ -422,19 +422,19 @@ models:
     limits:
       duration_s: {min: 4, max: 15}
       resolutions: [768p, 1080p, 2K]
-      # 首帧 / 首尾帧 和 参考素材 不能放在同一个请求里
+      # first/last frame and reference material can't be in the same request
       exclusive_inputs: [[video.i2v_first_frame, video.i2v_first_last], [video.multi_reference]]
     audio: {native: true}
     strengths:
-      - 第三方榜单前三（H3 Max Elo 约 1227），且列价最低
-      - 权重开放（H3-Base 可在本地跑 768p）
-      - Hypit 与 video-replicate-studio 均已接入
-      - 一次可出多个镜头：提示词里按 [Shot N] 加切镜时间点写
+      - "Top-3 on a third-party leaderboard (H3 Max Elo around 1227), and the lowest listed price"
+      - "Open weights (H3-Base can run locally at 768p)"
+      - Already integrated into both Hypit and video-replicate-studio
+      - Can produce multiple shots per call — written as [Shot N] with a cut timestamp in the prompt
     weaknesses:
-      - 企业配套弱；1080p 下时长受限
-      - 2K 需要托管模块
-    cost: {usd_per_s: 0.04, note: "H3 Max 约 2.40 美元/分钟；H3 约 7.80 美元/分钟"}
-    license: {commercial: conditional, note: MiniMax H3 Community License}
+      - Weak enterprise tooling; duration is limited at 1080p
+      - 2K needs the hosted module
+    cost: {usd_per_s: 0.04, note: "H3 Max about $2.40/minute; H3 about $7.80/minute"}
+    license: {commercial: conditional, note: "MiniMax H3 Community License"}
     sources:
       - https://tech-insider.org/best-ai-video-generator-2026/
       - https://www.turingpost.com/p/6-opensource-video-generation-models
@@ -443,7 +443,7 @@ models:
       - https://minimax.io/blog/minimax-h3
     verified: {date: 2026-10-29, basis: third-party}
     confidence: medium
-    notes: 官方博客 2026-07-31 发布；开源权重 2026-08-03，只有 768p 基础版，2K 模块只走 API；同一接口还有 H3 Highspeed、H3 Lite 两档，H3 Max 单独成条
+    notes: "Announced on the official blog 2026-07-31; open-source weights 2026-08-03, 768p base version only, the 2K module is API-only; the same endpoint also has H3 Highspeed and H3 Lite tiers; H3 Max has its own entry"
 
   - id: minimax-h3-max
     name: MiniMax H3 Max
@@ -457,23 +457,23 @@ models:
       duration_s: {min: 5, max: 15}
       resolutions: [480p, 768p]
       refs: {image: 9, video: 3, audio: 3}
-      # 首帧 / 尾帧 和 参考素材 不能同传；视频和音频只能在参考模式下用
+      # first/last frame and reference material can't be passed together; video and audio only work in reference mode
       exclusive_inputs: [[video.i2v_first_frame, video.i2v_first_last], [video.multi_reference, video.reference_video, video.reference_audio]]
     audio: {native: true, voice_ref: true}
     strengths:
-      - H3 的快速版（名字叫 Max，官方文档写的是快速生成档），厂商称 5 秒片段约 3 秒出
-      - 参考图、参考视频、参考音频都能用；可以关掉提示词扩写
+      - "H3's fast version (despite the name Max, the vendor's docs call it the fast-generation tier) — the vendor claims a 5-second clip in about 3 seconds"
+      - Reference images, videos, and audio can all be used; prompt expansion can be turned off
     weaknesses:
-      - 最高 768p，没有 2K；不能出 4 秒
-      - 生成结果的链接 24 小时后失效
-    cost: {usd_per_s: 0.08, note: fal 列价 768p 0.08、480p 0.05 美元/秒}
-    license: {commercial: conditional, note: 未找到官方商用条款，以平台条款为准}
+      - "768p max, no 2K; can't produce 4 seconds"
+      - Generated-result links expire after 24 hours
+    cost: {usd_per_s: 0.08, note: "fal's listed price: $0.08/s at 768p, $0.05/s at 480p"}
+    license: {commercial: conditional, note: "No official commercial terms found — per the platform's terms"}
     sources:
       - https://platform.minimax.io/docs/api-reference/video-generation-v2-create
       - https://www.orcarouter.ai/blog/h3-max-fal-speed-debut
     verified: {date: 2026-11-12, basis: vendor}
     confidence: medium
-    notes: 和 fal 合作训练，2026-08-27 先上 fal（minimax/h3-max，也叫 H3 Max by fal，可到 1080p），9 月初进 MiniMax 自己的 API；一次多镜头是否支持没有确认
+    notes: "Co-trained with fal, launched on fal first 2026-08-27 (minimax/h3-max, also called H3 Max by fal, can go up to 1080p), entered MiniMax's own API in early September; whether multiple shots per call is supported isn't confirmed"
 
   - id: pika-h3-flex
     name: Pika H3 Flex
@@ -489,20 +489,20 @@ models:
       refs: {image: 9, video: 3, audio: 3, total: 12}
     audio: {native: true, voice_ref: true}
     strengths:
-      - 便宜、快（6 步采样）；可以单独导出声音分轨
-      - 提示词指南写得很细，参考图、参考视频、参考音频都能用
+      - "Cheap and fast (6-step sampling); the audio stem can be exported separately"
+      - A detailed prompting guide; reference images, videos, and audio can all be used
     weaknesses:
-      - 原生只有 480p / 768p，更高分辨率靠 Pika 托管的放大
-      - 开源的只是约 2 GB 的适配器，底座约 210 GB
-    cost: {usd_per_s: 0.04, note: 768p 0.04 美元/秒；480p 0.02，1080p 0.07，4K 0.16（首发半价）}
-    license: {commercial: conditional, note: 基于 MiniMax H3 重新训练，许可以平台条款和 MiniMax H3 Community License 为准}
+      - "Native output is only 480p/768p — higher resolution relies on Pika's hosted upscaling"
+      - "The open-source part is only a ~2 GB adapter — the base model is about 210 GB"
+    cost: {usd_per_s: 0.04, note: "$0.04/s at 768p; $0.02 at 480p, $0.07 at 1080p, $0.16 at 4K (half price at launch)"}
+    license: {commercial: conditional, note: "Retrained from MiniMax H3 — license follows the platform's terms plus the MiniMax H3 Community License"}
     sources:
       - https://pika.art/blog/pika-h3-flex
       - https://pika.art/pika-h3-flex
       - https://pika.art/learn/pika-h3-flex-prompt-guide
     verified: {date: 2026-11-12, basis: vendor}
     confidence: medium
-    notes: 基于 MiniMax H3 重新训练；2026-10-29 发布，11-02 进 Pika App；只给音频参考不行，至少要一张图或一段视频
+    notes: "Retrained from MiniMax H3; released 2026-10-29, entered the Pika app 11-02; an audio reference alone isn't enough — at least one image or video clip is required"
 
   - id: heygen-video-1
     name: HeyGen Video 1
@@ -516,23 +516,23 @@ models:
       duration_s: {min: 5, max: 30}
       resolutions: [480p, 768p, 1080p, 2K]
       refs: {image: 9, video: 3, audio: 3, total: 15}
-      # 尾帧只在图生视频模式里有，参考素材只在参考模式里有
+      # a last frame only exists in image-to-video mode; reference material only exists in reference mode
       exclusive_inputs: [[video.i2v_first_frame, video.i2v_first_last], [video.multi_reference, video.reference_video, video.reference_audio]]
     audio: {native: true, voice_ref: true}
     strengths:
-      - 榜单靠前（Artificial Analysis 图生视频第 6、文生视频第 7）
-      - 提示词最长 16000 字符，单次最长 30 秒
+      - "Ranks well (Artificial Analysis #6 for image-to-video, #7 for text-to-video)"
+      - "Prompt up to 16000 characters, single call up to 30 seconds"
     weaknesses:
-      - 默认 768p；超过 15 秒必须开提示词增强
-    cost: {usd_per_s: 0.03, note: 768p 第三方列价}
-    license: {commercial: conditional, note: 基于 MiniMax H3 重新训练，许可以平台条款和 MiniMax H3 Community License 为准}
+      - "768p by default; anything over 15 seconds requires prompt enhancement to be on"
+    cost: {usd_per_s: 0.03, note: "Third-party listed price at 768p"}
+    license: {commercial: conditional, note: "Retrained from MiniMax H3 — license follows the platform's terms plus the MiniMax H3 Community License"}
     sources:
       - https://developers.heygen.com/reference/create-heygen-video.md
       - https://help.heygen.com/en/articles/17272995-introducing-heygen-video-generate-cinematic-clips-from-a-prompt
       - https://openrouter.ai/heygen/heygen-video-1
     verified: {date: 2026-11-12, basis: vendor}
     confidence: medium
-    notes: 基于 MiniMax H3 重新训练；2026-09-30 发布；1080p / 2K 下文生和参考模式只能 16:9 或 9:16
+    notes: "Retrained from MiniMax H3; released 2026-09-30; at 1080p/2K, text-to-video and reference mode only support 16:9 or 9:16"
 
   - id: utopai-x
     name: Utopai X
@@ -543,15 +543,15 @@ models:
     access: [app]
     primitives: [video.t2v, video.native_audio]
     strengths:
-      - Artificial Analysis 文生视频、图生视频都排第 2
+      - "#2 on Artificial Analysis for both text-to-video and image-to-video"
     weaknesses:
-      - 只能在 PAI App 里用，没有公开 API；规格没公布
-    license: {commercial: conditional, note: 基于 MiniMax H3 重新训练，许可以平台条款和 MiniMax H3 Community License 为准}
+      - Only usable inside the PAI app, no public API; specs aren't published
+    license: {commercial: conditional, note: "Retrained from MiniMax H3 — license follows the platform's terms plus the MiniMax H3 Community License"}
     sources:
       - https://www.utopaistudios.com/en/pai/utopai-x
     verified: {date: 2026-11-12, basis: vendor}
     confidence: low
-    notes: 基于 MiniMax H3 重新训练
+    notes: "Retrained from MiniMax H3"
 
   - id: p-video-2-pro
     name: P-Video-2-Pro
@@ -566,20 +566,20 @@ models:
       resolutions: [480p, 768p]
     audio: {native: true}
     strengths:
-      - 很便宜，有速度和质量两种模式
+      - Very cheap, has both a speed mode and a quality mode
     weaknesses:
-      - 最高 768p
-    cost: {usd_per_s: 0.01, note: 0.01–0.075 美元/秒，按分辨率和模式}
-    license: {commercial: conditional, note: 基于 MiniMax H3 重新训练，许可以平台条款和 MiniMax H3 Community License 为准}
+      - Tops out at 768p
+    cost: {usd_per_s: 0.01, note: "$0.01–0.075/s depending on resolution and mode"}
+    license: {commercial: conditional, note: "Retrained from MiniMax H3 — license follows the platform's terms plus the MiniMax H3 Community License"}
     sources:
       - https://replicate.com/prunaai/p-video-2-pro
       - https://runware.ai/docs/models/prunaai-p-video-2-pro.md
     verified: {date: 2026-11-12, basis: third-party}
     confidence: low
-    notes: 基于 MiniMax H3
+    notes: "Based on MiniMax H3"
 
   - id: hailuo-2.3
-    name: Hailuo 2.3 / 2.3 Fast（海螺）
+    name: "Hailuo 2.3 / 2.3 Fast"
     vendor: MiniMax
     category: video
     release: 2025-10
@@ -591,19 +591,19 @@ models:
       resolutions: [768p, 1080p]
     audio: {native: true}
     strengths:
-      - 微表情、风格化、动作有提升
-      - 便宜（Fast 版 768p 6 秒约 0.19 美元起）
+      - Improved micro-expressions, stylization, and motion
+      - "Cheap (the Fast version starts around $0.19 for a 768p 6-second clip)"
     weaknesses:
-      - 1080p 时长更短
-      - 失败的生成也会计费
-    license: {commercial: true, note: 以平台条款为准}
+      - Shorter duration at 1080p
+      - Failed generations are still billed
+    license: {commercial: true, note: "Per the platform's terms"}
     sources:
       - https://tech-insider.org/best-ai-video-generator-2026/
     verified: {date: 2026-10-29, basis: third-party}
     confidence: medium
 
   - id: wan-3.0
-    name: Wan 3.0（万相）
+    name: Wan 3.0
     vendor: Alibaba
     category: video
     release: 2026-08
@@ -614,16 +614,16 @@ models:
       duration_s: {min: 2, max: 30}
       resolutions: [480p, 720p, 1080p]
       refs: {image: 10, video: 5, audio: 5}
-      # 首帧 / 首尾帧 和 参考素材 不能放在同一个请求里
+      # first/last frame and reference material can't be in the same request
       exclusive_inputs: [[video.i2v_first_frame, video.i2v_first_last], [video.multi_reference, video.reference_video, video.reference_audio]]
     audio: {native: true}
     strengths:
-      - 第三方榜单第二（Elo 约 1229）
-      - 一次可出多个镜头：按「第 N 个镜头[起-止秒]」写，每段 2–5 秒
-      - 参考图、参考视频、参考音频（音色）都可以用
+      - "#2 on a third-party leaderboard (Elo around 1229)"
+      - "Can produce multiple shots per call: written as \"Shot N [start-end seconds]\", each 2–5 seconds"
+      - Reference images, reference videos, and reference audio (timbre) can all be used
     weaknesses:
-      - 只有 API，不开源
-    cost: {usd_per_s: 0.20, note: "1080p 约 0.20 美元/秒，720p 0.10，480p 0.05"}
+      - API only, not open-source
+    cost: {usd_per_s: 0.20, note: "About $0.20/s at 1080p, $0.10 at 720p, $0.05 at 480p"}
     license: {commercial: true}
     sources:
       - https://tech-insider.org/best-ai-video-generator-2026/
@@ -632,7 +632,7 @@ models:
       - https://help.aliyun.com/zh/model-studio/wan3-video-generation-api-reference
     verified: {date: 2026-11-12, basis: vendor}
     confidence: medium
-    notes: 2026-08-06 公测、08-24 全面开放；提示词最长 20000 字符；另有更快更贵的 Prime 档（wan3.0-video-prime），能力和参数相同；首尾帧模式不收音频
+    notes: "Public beta 2026-08-06, fully opened 08-24; prompt up to 20000 characters; there's also a faster, pricier Prime tier (wan3.0-video-prime) with the same capability and parameters; first/last-frame mode doesn't accept audio"
 
   - id: happyhorse-1.0
     name: HappyHorse 1.0
@@ -643,18 +643,18 @@ models:
     access: [api, api-aggregator]
     primitives: [video.t2v, video.i2v_first_frame, video.multi_reference, video.edit_v2v]
     strengths:
-      - 发布时位列 Artificial Analysis 无音频文生视频榜第一
-      - 百炼和 fal 上有文生、图生、参考生视频和视频编辑四个接口
+      - "#1 on the Artificial Analysis no-audio text-to-video leaderboard at launch"
+      - Bailian and fal offer four endpoints — text-to-video, image-to-video, reference-to-video, and video editing
     weaknesses:
-      - 是否开源各来源说法不一；时长、分辨率等规格未核实
-    license: {commercial: conditional, note: 未找到官方商用条款，以平台条款为准}
+      - Sources disagree on whether it's open-source; duration, resolution, and other specs are unverified
+    license: {commercial: conditional, note: "No official commercial terms found — per the platform's terms"}
     sources:
       - https://datanorth.ai/news/alibaba-launches-happyhorse-video-model
     verified: {date: 2026-11-12, basis: third-party}
     confidence: low
 
   - id: wan-2.7-edit
-    name: Wan 2.7 视频编辑
+    name: Wan 2.7 video editing
     vendor: Alibaba
     category: video
     release: 2026-05
@@ -662,16 +662,16 @@ models:
     access: [api]
     primitives: [video.edit_v2v]
     strengths:
-      - video-replicate-studio 用于镜头编辑
+      - Used by video-replicate-studio for shot editing
     license: {commercial: true}
     sources:
       - https://github.com/derek-zhuolin/video-replicate-studio
     verified: {date: 2026-10-29, basis: third-party}
     confidence: low
-    notes: 具体能力未细查，需要补充探针
+    notes: "Specific capability hasn't been closely examined — needs a follow-up probe"
 
   - id: wan-2.2
-    name: Wan 2.2（开源，含 TI2V-5B）
+    name: "Wan 2.2 (open-source, including TI2V-5B)"
     vendor: Alibaba
     category: video
     release: 2025-07
@@ -682,10 +682,10 @@ models:
       resolutions: [720p]
     audio: {native: false}
     strengths:
-      - Apache 2.0；TI2V-5B 单张消费级显卡可跑
-      - 可自部署、可微调，适合批量低成本生成
+      - "Apache 2.0; TI2V-5B runs on a single consumer GPU"
+      - Self-hostable and fine-tunable, good for high-volume low-cost generation
     weaknesses:
-      - 已不是最新一代
+      - No longer the latest generation
     license: {commercial: true, note: Apache 2.0}
     sources:
       - https://www.turingpost.com/p/6-opensource-video-generation-models
@@ -693,7 +693,7 @@ models:
     confidence: high
 
   - id: wan-vace
-    name: Wan VACE（Wan 2.1 VACE / Wan2.2-VACE-Fun）
+    name: "Wan VACE (Wan 2.1 VACE / Wan2.2-VACE-Fun)"
     vendor: Alibaba
     category: video
     release: 2025-05
@@ -704,10 +704,10 @@ models:
       resolutions: [480p, 720p]
     audio: {native: false}
     strengths:
-      - 深度、骨骼、线稿视频都能当控制输入，加一张参考图给角色外观；ComfyUI 有现成的舞蹈动作迁移工作流
-      - 开源可本地跑，参数（控制强度、分段）全可调
+      - "Depth, skeleton, or line-art video can all serve as control input, with one reference image for character appearance; ComfyUI has a ready-made dance motion-transfer workflow"
+      - Open-source, runs locally, every parameter (control strength, segmentation) is tunable
     weaknesses:
-      - 要自己搭 ComfyUI 和显卡；长段要分段生成再拼
+      - Needs your own ComfyUI setup and GPU; a long segment has to be generated in pieces and stitched together
     license: {commercial: true, note: Apache 2.0}
     sources:
       - https://github.com/ali-vilab/VACE
@@ -716,7 +716,7 @@ models:
     confidence: medium
 
   - id: ltx-2.5
-    name: LTX-2.5（开源）
+    name: "LTX-2.5 (open-source)"
     vendor: Lightricks
     category: video
     release: 2026-08
@@ -725,20 +725,20 @@ models:
     primitives: [video.t2v, video.i2v_first_frame, video.reference_audio, video.multi_shot, video.edit_v2v, video.native_audio, avatar.audio_driven]
     audio: {native: true}
     strengths:
-      - 开源模型中少有的音画同出，支持音频条件生成、编辑、多镜头和超分
+      - Rare among open-source models for generating picture and sound together — supports audio-conditioned generation, editing, multiple shots, and upscaling
     weaknesses:
-      - 时长与分辨率资料未明示
-    license: {commercial: conditional, note: "LTX-2.x Community License：年收入低于 1000 万美元免费商用"}
+      - Duration and resolution aren't clearly documented
+    license: {commercial: conditional, note: "LTX-2.x Community License: free commercial use under $10M annual revenue"}
     sources:
       - https://comfyui-wiki.com/en/news/2026-08-11-ltx-2-5-open-weights-release
       - https://fal.ai/models/lightricks/ltx-2.5/audio-to-video/pro/llms.txt
       - https://www.turingpost.com/p/6-opensource-video-generation-models
     verified: {date: 2026-11-12, basis: third-party}
     confidence: medium
-    notes: 2026-08-11 开源权重（22B，接替 LTX-2.3），API 分 Fast / Pro；fal 上有音频驱动视频接口（音频 2–20 秒，Pro 最长 10 秒）
+    notes: "Open-source weights released 2026-08-11 (22B, replacing LTX-2.3); the API has Fast / Pro tiers; fal has an audio-driven-video endpoint (audio 2–20 seconds, up to 10 seconds for Pro)"
 
   - id: hunyuanvideo-1.5
-    name: HunyuanVideo 1.5（开源）
+    name: "HunyuanVideo 1.5 (open-source)"
     vendor: Tencent
     category: video
     release: 2025-11
@@ -748,10 +748,10 @@ models:
     limits:
       resolutions: [720p, 1080p]
     strengths:
-      - 8.3B，约 14GB 显存可跑（需 offload）；自带超分模块，可把自身输出放大到 1080p
+      - "8.3B parameters, runs on about 14GB of VRAM (needs offload); has a built-in upscaling module that can upscale its own output to 1080p"
     weaknesses:
-      - 许可排除欧盟、英国、韩国
-    license: {commercial: conditional, note: 腾讯社区许可}
+      - License excludes the EU, UK, and South Korea
+    license: {commercial: conditional, note: "Tencent community license"}
     regions_excluded: [EU, UK, KR]
     sources:
       - https://www.turingpost.com/p/6-opensource-video-generation-models
@@ -760,24 +760,24 @@ models:
 
   - id: skyreels-v4
     name: SkyReels V4
-    vendor: Kunlun Skywork（昆仑万维）
+    vendor: Kunlun Skywork
     category: video
     release: 2026-02
     status: ga
     access: [app, api]
     primitives: [video.t2v, video.i2v_first_frame, video.reference_video, video.edit_v2v, video.native_audio]
     strengths:
-      - 文本、图片、视频都能当输入；声音和画面一起生成；生成和编辑在同一个模型里
+      - Text, image, and video can all serve as input; audio and picture are generated together; generation and editing are the same model
     weaknesses:
-      - 只有新闻来源，时长、分辨率等规格未核实
-    license: {commercial: conditional, note: 未找到官方商用条款，以平台条款为准}
+      - Only news-source coverage exists — duration, resolution, and other specs are unverified
+    license: {commercial: conditional, note: "No official commercial terms found — per the platform's terms"}
     sources:
       - https://news.lavx.hu/article/kunlun-tech-s-skyreels-v4-claims-second-place-in-global-video-model-rankings
     verified: {date: 2026-11-12, basis: third-party}
     confidence: low
 
   - id: runway-gen-4.5
-    name: Runway Gen-4.5（含 Act-Two）
+    name: "Runway Gen-4.5 (including Act-Two)"
     vendor: Runway
     category: video
     release: 2025-12
@@ -789,11 +789,11 @@ models:
       resolutions: [720p]
     audio: {native: true}
     strengths:
-      - 控制工具最全：关键帧、运动笔刷、相机路径
-      - Act-Two 能把驱动表演迁移到角色图上
+      - The most complete control tooling: keyframes, a motion brush, camera paths
+      - Act-Two can transfer a driving performance onto a character image
     weaknesses:
-      - 原生 720p（4K 需要超分）
-      - 按积分计费，成本累积快
+      - "Native 720p (4K needs upscaling)"
+      - Billed in credits — cost adds up fast
     license: {commercial: true}
     sources:
       - https://tech-insider.org/best-ai-video-generator-2026/
@@ -810,9 +810,9 @@ models:
     access: [app, api, api-aggregator]
     primitives: [video.edit_v2v, video.camera_control]
     strengths:
-      - 在已有镜头上改机位、增删物体，并把风格贯穿整个镜头
+      - Changes camera position and adds/removes objects on existing footage, carrying a style through the whole shot
     weaknesses:
-      - 长项目反复编辑的成本高
+      - Costly for a long project with repeated editing
     license: {commercial: true}
     sources:
       - https://runway.com/news/introducing-aleph-2-and-edit-studio
@@ -820,10 +820,10 @@ models:
       - https://www.seedance.tv/blog/best-ai-video-to-video-models-2026
     verified: {date: 2026-11-12, basis: vendor}
     confidence: low
-    notes: 2026-05-21 和 Edit Studio 一起发布
+    notes: "Released 2026-05-21 alongside Edit Studio"
 
   - id: higgsfield-genjutsu
-    name: Higgsfield Genjutsu（含 Lite）
+    name: "Higgsfield Genjutsu (including Lite)"
     vendor: Higgsfield
     category: video
     release: 2026-09
@@ -834,15 +834,15 @@ models:
       resolutions: [720p, 1080p]
       refs: {image: 30}
     strengths:
-      - 给一段视频换风格、换人或换物，最多 30 张参考图
+      - Restyles, swaps a person, or swaps an object in a video, with up to 30 reference images
     weaknesses:
-      - 是自研模型还是套壳没有说明；输入视频 4–30 秒（Lite 4–15 秒、最多 10 张参考图）
-    license: {commercial: conditional, note: 未找到官方商用条款，以平台条款为准}
+      - "Whether it's a proprietary model or a wrapper isn't documented; input video 4–30 seconds (Lite: 4–15 seconds, up to 10 reference images)"
+    license: {commercial: conditional, note: "No official commercial terms found — per the platform's terms"}
     sources:
       - https://higgsfield.ai/creator-hub/changelog
     verified: {date: 2026-11-12, basis: vendor}
     confidence: low
-    notes: 2026-09-01 发布，Lite 2026-10-19；同期还有 Intone（口型说话角色，最长 30 秒）和 Cinema Studio 4.0（30 秒生成、最多 50 张参考图）
+    notes: "Released 2026-09-01, Lite on 2026-10-19; the same period also brought Intone (a lip-syncing talking character, up to 30 seconds) and Cinema Studio 4.0 (30-second generation, up to 50 reference images)"
 
   - id: luma-ray3.2
     name: Luma Ray3.2 / Modify
@@ -857,11 +857,11 @@ models:
       resolutions: [1080p]
     audio: {native: true}
     strengths:
-      - Modify 能替换演员并保留原动作和时序
-      - Ray 有"推理式"自我修正，提示词遵循好
+      - Modify can replace an actor while preserving the original motion and timing
+      - Ray has "reasoning-style" self-correction, with good prompt adherence
     weaknesses:
-      - 背景复杂、人多的场景转换效果差
-      - 积分价格高
+      - Weaker at transforming busy backgrounds or crowded scenes
+      - Credit pricing runs high
     license: {commercial: true}
     sources:
       - https://lumalabs.ai/news/introducing-ray-3-2
@@ -869,7 +869,7 @@ models:
       - https://www.seedance.tv/blog/best-ai-video-to-video-models-2026
     verified: {date: 2026-11-12, basis: vendor}
     confidence: low
-    notes: 2026-06-09 发布，是 Luma 第一个完整 API；Luma 目前没有更新的模型；最多 16 张关键帧，Modify 最长 20 秒 1080p
+    notes: "Released 2026-06-09, Luma's first complete API; Luma currently has no newer model; up to 16 keyframes, Modify up to 20 seconds at 1080p"
 
   - id: flux-3-video
     name: FLUX 3 Video
@@ -885,22 +885,22 @@ models:
       keyframes: 10
     audio: {native: true}
     strengths:
-      - 单次最长 20 秒；多语种对白带口型，画面里的字能写对
-      - 可以先出草稿再增强；声音不另收费
+      - "Up to 20 seconds per call; multilingual lip-synced dialogue, with correctly spelled on-screen text"
+      - Can draft first, then enhance; sound costs no extra
     weaknesses:
-      - 1080p 以上可能是放大的；评测是厂商自己跑的
-      - 参考图、参考视频、参考音频还没上线
-    license: {commercial: conditional, note: 未找到官方商用条款，以平台条款为准}
+      - Above 1080p may be upscaled; benchmarks are vendor-run
+      - Reference images, videos, and audio aren't available yet
+    license: {commercial: conditional, note: "No official commercial terms found — per the platform's terms"}
     sources:
       - https://bfl.ai/blog/flux-3-video
       - https://bfl.ai/models/flux-3-video
       - https://docs.bfl.ml/api-reference/utility/generate-a-video-with-flux-3.md
     verified: {date: 2026-11-12, basis: vendor}
     confidence: medium
-    notes: 2026-08-04 正式开放；关键帧、续写、草稿三种模式互斥；3 张以上关键帧要指定时长；视频编辑走单独的 FLUX Video Edit
+    notes: "Officially opened 2026-08-04; keyframe, continuation, and draft modes are mutually exclusive; 3+ keyframes require specifying duration; video editing goes through a separate FLUX Video Edit"
 
   - id: flux-3-video-max
-    name: FLUX 3 Max（视频）
+    name: "FLUX 3 Max (video)"
     vendor: Black Forest Labs
     category: video
     release: 2026-10
@@ -913,19 +913,19 @@ models:
       keyframes: 10
     audio: {native: true}
     strengths:
-      - 快：厂商称 10 秒片段约 12 秒出
+      - "Fast: the vendor claims about 12 seconds to produce a 10-second clip"
     weaknesses:
-      - 原生只有 720p，更高分辨率是放大的
-    license: {commercial: conditional, note: 未找到官方商用条款，以平台条款为准}
+      - Native 720p only, higher resolution is upscaled
+    license: {commercial: conditional, note: "No official commercial terms found — per the platform's terms"}
     sources:
       - https://docs.bfl.ml/api-reference/utility/generate-a-video-with-flux-3-max.md
       - https://bfl.ai/models/flux-3-video
     verified: {date: 2026-11-12, basis: vendor}
     confidence: low
-    notes: 先在 fal 上线；关键帧按 24fps 的帧序号指定
+    notes: "Launched on fal first; keyframes are specified by 24fps frame number"
 
   - id: sora-2
-    name: Sora 2 / Sora 2 Pro
+    name: "Sora 2 / Sora 2 Pro"
     vendor: OpenAI
     category: video
     release: 2025-09
@@ -935,12 +935,12 @@ models:
     limits:
       duration_s: {max: 20}
     strengths:
-      - 发布时物理表现最好
+      - Best physical realism at launch
     weaknesses:
-      - App 于 2026-04-26 停止服务，API 于 2026-09-24 关停
-    license: {commercial: false, note: 已关停}
+      - "The app stopped service 2026-04-26, the API shut down 2026-09-24"
+    license: {commercial: false, note: "Already shut down"}
     sources:
       - https://tech-insider.org/best-ai-video-generator-2026/
     verified: {date: 2026-10-29, basis: third-party}
     confidence: medium
-    notes: 2026-03-24 宣布弃用，App 和网页 2026-04-26 关闭，API 2026-09-24 关停，OpenAI 没有给出替代模型；保留此条目，用来说明能力地图必须动态维护；路由器会跳过 status 为 shutdown 的模型
+    notes: "Deprecation announced 2026-03-24, the app and web shut down 2026-04-26, the API shut down 2026-09-24, with no replacement model named by OpenAI; this entry is kept to illustrate why the capability map must be maintained dynamically — the router skips any model with status shutdown"

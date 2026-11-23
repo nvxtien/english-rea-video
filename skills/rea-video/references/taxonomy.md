@@ -1,158 +1,158 @@
-# 制作方式分类与易混对照
+# Production-method taxonomy and commonly-confused pairs
 
-## 11 类底层画面
+## The 11 underlying-footage categories
 
-| 标签 | 中文 | 典型证据 | 复刻路线 |
+| Label | Name | Typical evidence | Remake route |
 |---|---|---|---|
-| live_action | 实拍 | 传感器噪声 σ>1、时域噪声 >0.8、逐像素不变比例 <0.55、手持抖动、原生 60fps、拍摄设备元数据 | 实拍素材（用户提供）或 AI 图生视频近似 |
-| ai_video | AI 生成视频 | 无传感器噪声的照片纹理、24→30 重复帧或插帧周期、平滑漂浮的运镜；VLM 看到手指、文字、物体形变或纹理闪烁 | capsule-cinema 首尾帧生成 |
-| avatar | 数字人口播 | 固定机位正脸，只有嘴和头在动，音频驱动 | TTS/克隆 + 数字人 |
-| cg_3d | 3D 渲染 | 平涂/干净材质但背景不是逐像素冻结，几何稳定、无形变 | Blender/C4D，或 AI 首尾帧近似 |
-| code_render | 代码/模板渲染 | 平坦块 >20%、用色 <70、横竖直边多；背景逐像素冻结、只有局部元素在动；没有材质纹理（平滑彩色渐变、大块饱和纯色、暗底辉光、分形/着色器色场）；暗底上亮部全是细碎亮点/细线（粒子、点云、线框） | Remotion/HTML 重建；报告按画面类型给做法（粒子 → Three.js，色场 → GLSL，渐变 → CSS blur，图表 → SVG/D3） |
-| screen_capture | 录屏/截图 | 大面积浅色界面、密集小字号文字、低饱和、整页滚动 | 真实界面录制（用户提供） |
-| still_motion | 静态图推拉 | 刚体变换内点率 >95%、残差 <0.3px、补偿后无残余、无 24fps 帧率痕迹 | 一张图 + 本地 ffmpeg 按测得参数重建 |
-| static_hold | 静帧 | 85% 以上帧逐像素重复 | 一张图 |
-| anim_2d | 2D 动画 | 工具测不出，只能看图：线条和平涂色块稳定、角色有骨骼或逐帧动作、常见"一拍二" | 角色设定图 + 首尾帧生成；要精确口型动作时做 AE / Live2D / Spine |
-| stop_motion | 定格动画 | 工具测不出，只能看图：真实材质（黏土、毛毡、纸）、动作一顿一顿、帧间轻微闪烁、同一实物光照不变 | 首选真的拍（固定机位、每秒约 12 张）；AI 只能近似 |
-| film_footage | 影视片段 | 工具测不出，只给线索：画面嵌在黑边里、24/25fps 源。看图看：认得出的演员或剧集、专业布光和多机位正反打、大量群演和成套布景、台标或平台水印 | 找原片对应片段再剪（版权属于片方，商用要授权）；不用原片就按同样景别和打光自己拍，或 AI 近似 |
+| live_action | Live action | Sensor noise σ>1, temporal noise >0.8, pixel-identical ratio <0.55, handheld shake, native 60fps, camera metadata | Real footage (user-supplied) or an AI image-to-video approximation |
+| ai_video | AI-generated video | Photo-like texture with no sensor noise, 24→30 duplicate-frame or frame-interpolation periodicity, smoothly floating camera moves; VLM sees deformed fingers/text/objects or texture flicker | capsule-cinema first/last-frame generation |
+| avatar | Digital-avatar talking head | Fixed frontal shot, only the mouth and head move, audio-driven | TTS/voice clone + digital avatar |
+| cg_3d | 3D render | Flat/clean materials but the background isn't pixel-frozen, geometry is stable with no deformation | Blender/C4D, or an AI first/last-frame approximation |
+| code_render | Code/template render | Flat blocks >20%, fewer than 70 colors, many horizontal/vertical edges; the background is pixel-frozen with only local elements moving; no material texture (smooth color gradients, large saturated flat-color blocks, glow on a dark background, fractal/shader color fields); on a dark background, the bright areas are all tiny specks or thin lines (particles, point clouds, wireframes) | Rebuild in Remotion/HTML; the report gives an approach per visual type (particles → Three.js, color fields → GLSL, gradients → CSS blur, charts → SVG/D3) |
+| screen_capture | Screen recording/screenshot | Large light-colored UI areas, dense small text, low saturation, whole-page scrolling | Real UI recording (user-supplied) |
+| still_motion | Still-image pan (Ken Burns) | Rigid-transform inlier ratio >95%, residual <0.3px, no residual after compensation, no 24fps frame-rate artifacts | One image + local ffmpeg rebuild using the measured parameters |
+| static_hold | Freeze frame | 85%+ of frames are pixel-identical | One image |
+| anim_2d | 2D animation | Undetectable by the tool, visual judgment only: stable lines and flat color blocks, the character has rigging or frame-by-frame motion, often "animated on twos" | Character turnaround sheet + first/last-frame generation; do it in AE / Live2D / Spine when precise lip sync/motion is needed |
+| stop_motion | Stop motion | Undetectable by the tool, visual judgment only: real materials (clay, felt, paper), jerky motion, slight inter-frame flicker, consistent lighting on the same physical object | Best to actually shoot it (fixed camera, ~12 shots/sec); AI can only approximate |
+| film_footage | Film/TV footage | Undetectable by the tool, only gives clues: the picture is letterboxed in black bars, a 24/25fps source. Judge by eye: recognizable actors or a show, professional lighting with multi-camera shot/reverse-shot, large numbers of extras and full sets, a channel logo or platform watermark | Find and cut in the actual source clip (copyright belongs to the studio — needs licensing for commercial use); without the original, shoot your own with the same framing and lighting, or approximate with AI |
 
-`anim_2d` / `stop_motion` / `film_footage` 只由看图来源判断：只有一方看图时结论标「待确认」，VLM 和 agent 都看过才去掉。
+`anim_2d` / `stop_motion` / `film_footage` are decided by visual judgment only: if only one side (VLM or agent) has looked, mark the verdict "unconfirmed"; only drop that once both have looked.
 
-`live_action` 只用于视频作者或客户自己拍的画面；剪自已有电影、电视剧、短剧的画面一律是 `film_footage`，哪怕拍得再像实拍。
+`live_action` is only for footage the video's creator or client shot themselves; footage cut from an existing movie, TV show, or short drama is always `film_footage`, no matter how much it looks like live action.
 
-## 实拍上的 AI 加工（ai_edits）
+## AI edits on live-action footage (`ai_edits`)
 
-底层是实拍或定格时，再看有没有被 AI 二次加工，写在 `ai_edits` 里，复刻方案会在拍摄场次后面加"拍完后要做的 AI 加工"：
+When the underlying footage is live action or stop motion, also check whether it was AI-edited afterward, and record it in `ai_edits`; the remake plan will add "AI edits to do after shooting" after the shoot listing:
 
-| kind | 中文 | 看什么 | 复刻 |
+| kind | Name | What to look for | Remake |
 |---|---|---|---|
-| face_swap | 换脸 | 脸部边缘和发际线闪烁、脸和脖子肤色/光线不一致、侧脸时五官漂移 | R12 视频编辑模型换人 |
-| lip_sync | 对口型/改台词 | 嘴型和下巴不跟、牙齿模糊、只有嘴部区域画质不同 | R13 口型重配 |
-| restyle | 整段风格化重绘 | 动作是真人的，但画面是动漫/油画/黏土等风格，纹理在帧间游移 | R12 视频编辑模型 |
-| outfit_swap | AI 换装 | 衣服纹理闪烁、和手臂交界处糊 | R05 试穿图 + 视频 |
-| bg_replace | 抠像换背景 | 头发边缘有光晕或锯齿、人和背景光线方向不一致、背景透视不对 | 绿幕抠像，或 R12 |
-| object_edit | 加/删/换物体 | 物体边缘闪烁、阴影缺失 | R12 |
-| beautify | 美颜/瘦脸 | 皮肤过度光滑、背景直线在脸边弯曲 | 剪映等美颜 |
+| face_swap | Face swap | Flicker at the face edge and hairline, mismatched skin tone/lighting between face and neck, features drifting in profile | R12 video-editing model for face replacement |
+| lip_sync | Lip sync / redubbed lines | Mouth shape doesn't track the jaw, blurry teeth, only the mouth region has different image quality | R13 lip-sync redub |
+| restyle | Full restyle repaint | The motion is a real person's, but the look is anime/oil-painting/clay/etc., with texture drifting between frames | R12 video-editing model |
+| outfit_swap | AI outfit swap | Flickering clothing texture, blur at the arm boundary | R05 virtual try-on image + video |
+| bg_replace | Background replacement via matting | Halo or jagged edges at the hairline, mismatched light direction between subject and background, wrong background perspective | Green-screen matting, or R12 |
+| object_edit | Object added/removed/replaced | Flickering object edges, missing shadow | R12 |
+| beautify | Beautify/face-slimming | Over-smoothed skin, straight background lines bending near the face | Beautify filters like CapCut |
 
-## 判断要点速查
+## Quick judgment-point cheat sheet
 
-| 现象 | 指向 |
+| Observation | Points to |
 |---|---|
-| 相邻帧逐像素重复、首尾无变化 | 静帧；如果是平涂渲染卡片，归为代码渲染 |
-| 整帧按一个刚体变换缩放/平移，补偿后无残差，且**没有** 24fps 源的帧率痕迹 | 静态图推拉 |
-| 平涂色块多、用色少、横竖直边多 | 渲染（代码或 3D）；背景像素逐帧完全不变、只有局部在动 → 2D 代码动效 |
-| 约 20% 帧重复、周期 4–6（24→30） | 源是 24fps：AI 生成 / 3D / 电影或电视剧素材，不是手机原生拍摄 |
-| 竖屏里一块 16:9 或更宽的画面嵌在黑边中间，上面标题、下面解说字幕 | 影视解说版式 → 倾向影视片段；AI 电影感短片也会加黑边，要看图 |
-| 画面上有「年份 ·《剧名》」、台标、平台水印，或多段画风和调色互不相同的片段快速切换 | 影视混剪 / 名场面合集 → 倾向影视片段 |
-| 只有清晰度按周期起伏、没有重复帧（插帧） | 弱证据：插帧和重新压缩都会造出来，要看图确认 |
-| 原生 ≥48fps 且无重复、无插帧周期 | 多为手机/相机实拍 |
-| 传感器噪声和时域噪声明显、手持抖动 | 实拍 |
-| 平台转码文件：整片原生 30fps、实拍类镜头没有重复帧 | 倾向手机实拍（转码后噪声证据失效，以帧率为准） |
-| 几乎无彩色、只用个位数颜色的平面画面 | 界面/文档动效（代码渲染），不是 3D |
-| 近黑底上的亮部几乎全是细碎亮点或细线、没有连续的明暗表面 | 粒子/点云/线框图形（代码渲染），不是 3D 实体、AI 或夜景实拍 |
-| 整幅画面几乎没有细纹理：平滑彩色渐变、大块饱和纯色、暗底辉光，或彩虹色场 | 代码绘制的渐变/矢量/着色器画面，不是 3D 渲染（3D 有布料、木纹等材质纹理）；整帧都在动也一样 |
-| 整片铺满音乐、人声在唱（持续音高多） | 音乐 MV → 歌大概率 AI 生成 |
-| 旁白说话 + 垫底 BGM | 普通配乐 → 倾向现成曲库（待确认，AI 工作流常用 Suno） |
-| 切镜处底噪跳变 | 声音跟着片段走：AI 视频原生出声或实拍同期声 |
-| 文件带 GB 45438 AIGC 隐式标识 Label=1 | 声明为 AI 生成（只说明整片声明过，具体镜头仍要逐个判断） |
-| 浅色面板内有大量小字号文字 | 嵌入的界面截图 → 真实素材 |
-| 人声间隙里仍有响亮且有音调的声音 | 有 BGM 垫底 |
-| 大面积近黑但带颗粒、亮部不平坦、有人脸 | 夜景/弱光实拍（转码压暗部造成的平坦块不是渲染特征） |
-| 人脸占画面 ≥6%、整镜都在、说话 | 人物近景实拍或数字人；墙面/衣服的平坦块不算渲染证据 |
+| Pixel-identical adjacent frames, no change from start to end | Freeze frame; if it's a flat-color rendered card, classify as code render |
+| The whole frame scales/translates under one rigid transform, no residual after compensation, and there is **no** 24fps-source frame-rate artifact | Still-image pan |
+| Lots of flat color blocks, few colors, many horizontal/vertical edges | A render (code or 3D); background pixels completely frozen frame-to-frame with only local motion → 2D code-driven motion graphics |
+| About 20% duplicate frames with a period of 4–6 (24→30) | Source is 24fps: AI-generated / 3D / movie or TV footage — not native phone capture |
+| A 16:9-or-wider block embedded in black bars within a vertical frame, with a title above and commentary subtitles below | A commentary-video layout → leans film footage; AI cinematic shorts also add black bars, so check by eye |
+| "Year · Show title" text on screen, a channel logo, a platform watermark, or several segments with different looks/grading rapidly cut together | Film montage / highlight-reel compilation → leans film footage |
+| Only sharpness oscillates periodically, with no duplicate frames (frame interpolation) | Weak evidence: both frame interpolation and re-compression can cause this — confirm visually |
+| Native ≥48fps with no duplicates and no interpolation period | Mostly native phone/camera footage |
+| Noticeable sensor noise and temporal noise, handheld shake | Live action |
+| A platform-transcoded file: the whole video is native 30fps, live-action-type shots have no duplicate frames | Leans native phone footage (noise evidence is unreliable after transcoding, go by frame rate) |
+| A nearly colorless flat frame using only single-digit colors | UI/document motion graphics (code render), not 3D |
+| On a near-black background, the bright areas are almost entirely tiny specks or thin lines with no continuous light/dark surface | Particle/point-cloud/wireframe graphics (code render), not a 3D solid, AI, or live-action night scene |
+| Almost no fine texture anywhere in the frame: smooth color gradients, large saturated flat-color blocks, glow on a dark background, or a rainbow color field | A code-drawn gradient/vector/shader scene, not a 3D render (3D has cloth, wood-grain, and other material texture); still true even if the whole frame is animating |
+| Music fills the whole video, the voice is singing (lots of sustained pitch) | Music MV → the song is very likely AI-generated |
+| Narration + background BGM | Ordinary soundtrack → leans stock music library (unconfirmed — AI workflows often use Suno) |
+| A jump in background noise level at cuts | Audio follows the clip: either native audio from an AI video, or live-action sync sound |
+| The file carries a GB 45438 implicit AIGC marker (Label=1) | Declared as AI-generated (only tells you the whole video is declared as such — still judge each shot individually) |
+| A light-colored panel with lots of small text | An embedded UI screenshot → real asset |
+| A loud, tonal sound still present in the gaps between voice | There's BGM underneath |
+| Large near-black areas with grain, uneven bright areas, a face present | Night/low-light live action (flat blocks from transcoding crushing shadows are not a render signature) |
+| A face covering ≥6% of the frame, present the whole shot, talking | Live-action close-up of a person, or a digital avatar; flat blocks on a wall or clothing don't count as render evidence |
 
-## 易混对照（复核时逐条看）
+## Commonly-confused pairs (check each one by one during review)
 
-**实拍 vs AI 视频**
-- 实拍：噪声颗粒随帧变化；手部、文字、远处人物正常；物理正确（布料、液体、碰撞）。
-- AI：皮肤和光线过于完美；背景人物或文字乱码；物体边缘"沸腾"；动作缓慢漂浮；镜头末尾容易定格。
-- 帧率：24fps 源（AI/电影）vs 60fps 原生（手机）。注意 AI 插帧到 60fps 会留下清晰度周期，`sharp_period_ac>0.45`。
-- 确定性层对这一对最弱，**必须结合 VLM 和你自己看帧**。
+**Live action vs. AI video**
+- Live action: noise grain varies frame to frame; hands, text, and distant people look normal; physics is correct (cloth, liquid, collisions).
+- AI: skin and lighting look too perfect; background people or text are garbled; object edges "boil"; motion drifts slowly; the shot often freezes near the end.
+- Frame rate: a 24fps source (AI/film) vs. native 60fps (phone). Note that AI interpolated up to 60fps leaves a sharpness period, `sharp_period_ac>0.45`.
+- The deterministic layer is weakest on this pair — **you must combine the VLM and your own frame-by-frame look.**
 
-**卡通 3D 风格的 AI 视频 vs 真 3D 渲染**
-- 真 3D：几何、材质逐帧稳定，毛发和布料按物理运动，可以精确循环，平坦块多、用色少。
-- AI：同一物体在镜头内轻微变形，纹理闪烁，噪声更像照片（用色 >100）。
-- 抖音上大量"3D 卡通"账号是 AI 生成的，但没有标识时只能写倾向。
+**Cartoon-3D-style AI video vs. a real 3D render**
+- Real 3D: geometry and materials are frame-to-frame stable, hair and cloth move physically, can loop exactly, lots of flat blocks, few colors.
+- AI: the same object deforms slightly within the shot, texture flickers, noise looks more photographic (>100 colors).
+- Many "3D cartoon" accounts on Douyin are AI-generated, but without a watermark you can only state a leaning.
 
-**暗底粒子图形 vs 3D 渲染 vs AI 视频 / 夜景实拍**
-- 粒子图形（代码渲染）：器官、人体、地球、分子等由成千上万个发光点或细线拼成，没有连续的明暗表面；常配左上角章节牌、引线标注、跳动的数字。Three.js、AE Plexus / Trapcode 都能做，复刻按代码工程走。
-- 3D 渲染：有连续的表面明暗、材质和阴影。
-- 夜景实拍 / AI：亮部是有明暗过渡的物体和光斑，带颗粒或形变。
-- 复核时 `description` 要写清每镜粒子拼成什么形状、颜色、怎么动（粒子流向、变形、推镜/环绕）、标注和数字在哪；报告「代码合成」一节的逐镜表就用它。只写"粒子背景"复刻出来就是一团光斑。
+**Dark-background particle graphics vs. 3D render vs. AI video / night-scene live action**
+- Particle graphics (code render): organs, bodies, the Earth, molecules, etc. made of thousands of glowing dots or thin lines with no continuous light/dark surface; often paired with a chapter card in the top-left, leader-line labels, ticking numbers. Doable in Three.js, AE Plexus/Trapcode — remake it as a code project.
+- 3D render: has a continuous light/dark surface, materials, and shadows.
+- Night-scene live action / AI: bright areas are objects and light spots with real light/dark gradation, with grain or deformation.
+- When reviewing, the `description` must spell out what shape the particles form in each shot, their color, how they move (particle flow direction, deformation, push-in/orbit), and where labels and numbers are placed — the report's "code composite" per-shot table uses this directly. Writing only "particle background" will get you a blob of light spots when remade.
 
-**代码绘制的渐变 / 辉光 / 色场 vs 3D 渲染**
-- 代码画面：整幅几乎没有细纹理，只有平滑渐变、纯色块、辉光和文字；常见渐变光斑背景、毛玻璃卡片、霓虹字、CSS 3D 翻转卡片、分形缩放和 plasma 着色器。即使整帧都在动（背景漂移、辉光呼吸），也是代码渲染。
-- 3D 渲染：物体有材质纹理（布料、木纹、金属、塑料颗粒）、有投影和物体间的光影关系。
-- 加了胶片颗粒的扁平海报：颗粒去掉后是纯色块，算代码渲染；颗粒很重（工具测到噪声 σ≥3）时工具可能看不穿，要看图判断。
-- 平滑渐变缓慢变色容易被误认成交叉溶解；工具按"变化速度是否平稳"排除，复核时如果一个连续的背景动效仍被切成多镜，按一镜处理。
+**Code-drawn gradients/glow/color fields vs. 3D render**
+- Code-drawn: almost no fine texture anywhere in the frame, only smooth gradients, flat color blocks, glow, and text; common look: a gradient-blob background, frosted-glass cards, neon text, CSS 3D flip cards, fractal zooms, and plasma shaders. Still a code render even if the whole frame is animating (background drift, breathing glow).
+- 3D render: objects have material texture (cloth, wood grain, metal, plastic grain), with shadows and light interplay between objects.
+- A flat poster with film grain added: strip the grain and it's a flat color block — counts as code render. When the grain is heavy (tool-measured noise σ≥3), the tool may be fooled — judge by eye.
+- A smooth gradient that shifts color slowly can be mistaken for a cross-dissolve; the tool filters these out by checking whether the rate of change is steady — if a continuous background animation still gets split into several shots on review, treat it as one shot.
 
-**代码渲染 vs 录屏截图**
-- 代码渲染：字号大、品牌配色、矢量清晰、元素有动画入场。
-- 截图：浅色底、密集小字、界面控件（按钮、图标、导航），往往被整体缩放或滚动。
-- 模板里嵌入了截图：底层算代码渲染，截图在"真实素材"里单独列出。
+**Code render vs. screen recording/screenshot**
+- Code render: large text, brand colors, crisp vectors, elements animate in.
+- Screenshot: light background, dense small text, UI controls (buttons, icons, navigation), often scaled or scrolled as a whole.
+- A screenshot embedded in a template: the underlying footage still counts as code render, with the screenshot listed separately under "real assets."
 
-**代码渲染镜头怎么写 description**
-- 报告「代码合成」一节的「逐镜动效时间轴」是工具测的：每个元素的位置、出现时间、方向、快慢曲线、色值，依次出现的元素合并成一条"间隔 X 秒"；关键帧条是 `shots/shot_XXX_strip.jpg`，元素截图和编号拼图是 `shots/shot_XXX_elements.jpg`。
-- 对照它们在 `description` 里按编号写清每个元素是什么（"1–12：圆角图标卡片，依次弹入"），不用重复测量值。
+**How to write `description` for a code-render shot**
+- The report's "code composite" section has a per-shot "motion timeline" that's measured by the tool: each element's position, appearance time, direction, speed curve, and color value; elements appearing in sequence are merged into one "every X seconds" entry. The keyframe strip is `shots/shot_XXX_strip.jpg`, and the element screenshots/numbered collage is `shots/shot_XXX_elements.jpg`.
+- Against these, write in `description` what each numbered element actually is ("1–12: rounded icon cards, popping in one after another") — no need to repeat the measured values.
 
-**静态图推拉 vs AI 视频的缓慢推镜**
-- 推拉：剪辑软件按时间线帧率渲染，每帧都不同，没有 24→30 的重复规律。
-- AI 推镜：带 24fps 源的重复帧规律，主体常有细微动作（呼吸、眨眼）。
+**Still-image pan vs. a slow AI push-in**
+- Pan: rendered frame-by-frame by editing software at the timeline frame rate, every frame different, no 24→30 duplicate-frame pattern.
+- AI push-in: has the duplicate-frame pattern of a 24fps source, the subject often has subtle motion (breathing, blinking).
 
-**2D 动画 vs 代码动效 vs AI 动画风视频**
-- 2D 动画：有角色和表演，线条稳定、按帧精确，常一拍二（每两帧才变一次）。
-- 代码动效：文字、图形、UI 的入场和缓动，没有角色表演。
-- AI 动画风：线条在帧间游移、细节形变，24fps 源痕迹。
+**2D animation vs. code-driven motion graphics vs. AI animation-style video**
+- 2D animation: has characters and performance, stable lines, precise per-frame timing, often animated on twos (changes every other frame).
+- Code-driven motion graphics: text, shapes, and UI entrances and eases, no character performance.
+- AI animation-style: lines drift between frames, details deform, shows 24fps-source artifacts.
 
-**定格动画 vs AI 视频 vs 实拍**
-- 定格：同一实物逐帧挪动，光照恒定，帧间有轻微闪烁和顿挫，材质上有指纹、毛边。
-- AI 仿定格：材质本身在帧间变化（黏土纹理漂移），没有真实的顿挫节奏。
-- 工具常把定格判成 AI（帧率规律相似），看图时重点看材质是否稳定。
+**Stop motion vs. AI video vs. live action**
+- Stop motion: the same physical object moved frame by frame, lighting constant, slight flicker and jerkiness between frames, fingerprints and rough edges visible on the material.
+- AI pseudo-stop-motion: the material itself changes between frames (clay texture drifting), with none of the real jerky rhythm.
+- The tool often misjudges stop motion as AI (similar frame-rate pattern) — when reviewing by eye, focus on whether the material stays stable.
 
-**影视片段 vs AI 短剧 vs 自己拍的实拍**
-- 影视片段：认得出的演员或剧集；专业剧组的布光（主光、轮廓光、布景里的实用光源）、景深和多机位正反打；大量群演、成套布景和道具、动作戏有替身和威亚；画面里的文字（招牌、报纸、屏幕）清楚可读；常带台标、平台水印、片头片尾字幕，或嵌在黑边里的宽画幅。
-- AI 短剧：脸过于完美、不同角色长得很像；手、牙齿、文字出错；背景人物少且模糊；物体和衣服纹理在帧间漂移；镜头多是 5–10 秒的单人近景。「影视效果」「剧情需要」这类免责声明在 AI 短剧解说里也常见，不能单独当证据。
-- 自己拍的实拍：口播、vlog、开箱这类作者本人或客户出镜，手机或小团队拍摄，没有剧组规模的布景和群演。
-- 解说类视频里如果插了作者自己的口播或 AI 画面，按镜头分别标。
-- 工具只开像素时会把影视片段判成「AI 视频」或「实拍」并标出「待确认」，复核时要改判。
+**Film/TV footage vs. AI short-drama vs. one's own live-action footage**
+- Film/TV footage: recognizable actors or a show; professional-crew lighting (key light, rim light, practical lights in the set), depth of field, and multi-camera shot/reverse-shot; large numbers of extras, full sets and props, stunt doubles and wire-work in action scenes; on-screen text (signs, newspapers, screens) is clearly legible; often carries a channel logo, platform watermark, opening/closing credits, or is letterboxed in a wide aspect ratio.
+- AI short-drama: faces are too perfect, different characters look alike; hands, teeth, and text come out wrong; few, blurry background people; object and clothing texture drifts between frames; shots are mostly 5–10-second single-person close-ups. Disclaimers like "dramatized" or "for the story" also show up in AI short-drama commentary and can't be used as evidence on their own.
+- One's own live-action footage: talking-head, vlog, unboxing-type videos where the creator or client appears on camera, shot on a phone or by a small team, without crew-scale sets or extras.
+- If a commentary video cuts in the creator's own talking-head or AI footage, label it shot by shot.
+- When the tool only looks at pixels, it tends to misjudge film footage as "AI video" or "live action" and flag it "unconfirmed" — correct this on review.
 
-**游戏画面 vs 3D 渲染 vs 录屏**
-- 游戏实况、游戏解说、游戏混剪：底层归 `screen_capture`（录的是屏幕上实时渲染的游戏），不是 `cg_3d`。看血条、小地图、准星、技能图标、伤害数字、聊天框这类 HUD。复刻是录游戏，`description` 写明游戏名（认得出时）、视角和 HUD 位置。
-- 游戏 CG 宣传片、过场动画：没有 HUD、镜头调度像电影，归 `cg_3d`。
-- 工具和 VLM 都可能把带 HUD 的游戏画面判成 3D 或录屏界面，复核时以 HUD 为准。
+**Game footage vs. 3D render vs. screen recording**
+- Gameplay footage, game commentary, game montages: classify as `screen_capture` (it's a recording of a game rendering live on screen), not `cg_3d`. Look for HUD elements: health bars, minimap, crosshair, skill icons, damage numbers, chat box. To remake, record the game; write the game's name (if recognizable), viewpoint, and HUD position in `description`.
+- Game CG trailers, cutscenes: no HUD, cinematic camera direction — classify as `cg_3d`.
+- Both the tool and the VLM can misjudge game footage with a HUD as 3D or a screen-recorded UI — on review, go by the HUD.
 
-**动态漫 / 漫剧 vs 2D 动画 vs AI 视频**
-- 静态漫画分格只做推拉摇移 → `still_motion`；分格上叠了眨眼、头发飘、嘴动这类局部动画 → `anim_2d`；线条在帧间游移、细节形变 → `ai_video`。
-- 漫剧常是 AI 图 + 局部动效，`image_source` 填 `ai_image` 还是手绘，看线条和手指等细节。
+**Motion comics / "comic dramas" vs. 2D animation vs. AI video**
+- A static comic panel that's only panned/zoomed → `still_motion`; a panel with local animation layered on (blinking, hair blowing, mouth moving) → `anim_2d`; lines drifting between frames with deforming details → `ai_video`.
+- Comic dramas are often an AI image plus local motion effects; set `image_source` to `ai_image` or hand-drawn based on details like line quality and fingers.
 
-**静帧：AI 图 vs 真实照片 vs 渲染卡片**
-- 渲染卡片（平涂、少色）→ 归为代码渲染。
-- AI 图和真实照片在确定性层无法区分，交给 VLM；判断不了就写"图片素材（真实/AI 待确认）"。
+**Freeze frame: AI image vs. a real photo vs. a rendered card**
+- A rendered card (flat color, few colors) → classify as code render.
+- An AI image and a real photo can't be told apart at the deterministic layer — leave it to the VLM; if it still can't be determined, write "image asset (real/AI unconfirmed)."
 
-## 切镜
+## Cuts
 
-- 硬切：直方图距离与像素差的尖峰，且变化面积超过 25%。元素弹出不算切镜。
-- 跳剪 / 推近切：同机位同背景，人物位置或景别在一帧内跳变。变化面积只有 17% 以上，但比前后几帧的变化高出 2.5 倍以上，前后两帧都平稳，画面也不会回到切之前。
-- 闪光、枪口火光、频闪：画面一两帧内变亮又恢复原样，不算切镜；闪白转场褪去后露出新画面，仍算切镜。
-- 短镜头：两刀干净的硬切之间、画面稳定的镜头，最短保留 0.12 秒（快剪插入、开头封面帧）；更近的几处边界属于同一个转场，保留最强的一处。
-- 交叉溶解：中间帧是两端帧的线性混合（α 在 0.2–0.8，残差 <0.2），并用光流排除推拉运动。
-- 淡入淡出：亮度降到极暗或极亮再回来。
-- 没有硬切的转场：前面一段画面稳定、中间一段过渡、后面一段画面稳定，两端是不同的画面，且中间能解释成淡入淡出 / 叠化 / 划像 / 推移，才算一处边界。同一个场景只是变亮变暗、镜头内的推近和摇移不算。
-- 黑边和上下固定的横幅先裁掉再量，黑边里的画面转场不会被黑边稀释。
+- Hard cut: a spike in histogram distance and pixel difference, with the changed area exceeding 25%. An element popping in doesn't count as a cut.
+- Jump cut / push-in cut: same camera position and background, the subject's position or framing jumps within one frame. The changed area is only above 17%, but more than 2.5x higher than surrounding frames; the frames right before and after are both stable, and the picture never reverts to what it was before the cut.
+- Flash, muzzle flash, strobing: the frame brightens for a frame or two and then returns to normal — doesn't count as a cut; a white-flash transition that fades to reveal a new scene still counts as a cut.
+- Short shots: a shot between two clean hard cuts with a stable picture is kept down to a minimum of 0.12 seconds (quick-cut inserts, an opening cover frame); boundaries closer together than that belong to the same transition — keep only the strongest one.
+- Cross-dissolve: the middle frames are a linear blend of the two ends (α between 0.2–0.8, residual <0.2), with optical flow used to rule out a push/pan.
+- Fade: brightness drops to near-black or near-white and back.
+- A transition with no hard cut: counts as one boundary only when a stable segment is followed by a transitional segment and then another stable segment, the two ends show different footage, and the middle segment can be explained as a fade/dissolve/wipe/slide. A scene just getting brighter/darker, or an in-shot push-in/pan, doesn't count.
+- Black bars and fixed top/bottom banners are cropped out before measuring, so a transition inside the black-barred picture isn't diluted by them.
 
-**转场类型**（每镜的 `transition`：`type`、起止时间 `start` / `end`、`duration`，有方向的带 `direction`）
+**Transition types** (per-shot `transition`: `type`, start/end time `start`/`end`, `duration`, with `direction` when there is one)
 
-| type | 画面上是什么 | 怎么认 |
+| type | What it looks like | How to recognize it |
 |---|---|---|
-| `fade` | 经黑场 / 白场（`via`） | 中间有纯黑或纯白的平帧，前后是同一画面变暗变亮 |
-| `flash` | 闪白、漏光烧白后露出新画面 | 中间亮到接近全白但不是平帧；或切进来第一帧很亮、随后回落 |
-| `dissolve` | 叠化 | 每个中间帧都是两端的线性混合 |
-| `wipe` | 划像（直边、圆形、百叶、时钟） | 逐块看，每块不是旧画面就是新画面，新画面的面积一路变大；`direction` 是边缘走的方向，`center_out` / `edges_in` 是圆形开合 |
-| `slide` | 推移（`mode`：`push` 新旧一起动，`cover` 新画面滑入，`reveal` 旧画面滑走） | 中间帧能用两端画面按一条直边平移拼出来 |
-| `whip` | 甩镜：快速摇移加运动模糊，切点藏在模糊里 | 硬切前后画面朝一个方向大幅平移，细节被抹掉 |
-| `zoom` / `spin` | 缩放 / 旋转冲进下一镜 | 硬切前后逐帧估出的缩放量或旋转角很大 |
-| `blur` | 虚焦再对回来 | 硬切两侧的细节都明显少于镜头平时 |
-| `glitch` | 故障：错位、新旧画面来回闪 | 区间内有多次硬跳，且画面跳回过旧镜头 |
-| `shake` | 切点前后一阵抖动 | 逐帧位移很大但来回抵消 |
+| `fade` | Through black/white (`via`) | A pure black or white flat frame in the middle, same scene darkening/brightening before and after |
+| `flash` | White flash, a light-leak burnout revealing a new scene | The middle brightens to near-white but isn't a flat frame; or the first frame after the cut is very bright and then settles |
+| `dissolve` | Cross-dissolve | Every middle frame is a linear blend of the two ends |
+| `wipe` | Wipe (straight edge, circular, blinds, clock) | Checked block by block — each block is either the old or the new picture, and the new picture's area keeps growing; `direction` is which way the edge moves, `center_out`/`edges_in` for a circular open/close |
+| `slide` | Slide (`mode`: `push` both move together, `cover` the new scene slides in, `reveal` the old scene slides away) | The middle frames can be reconstructed by translating the two end frames along one straight edge |
+| `whip` | Whip pan: a fast pan with motion blur hiding the cut | Before and after a hard cut, the picture translates heavily in one direction with detail smeared out |
+| `zoom` / `spin` | Zoom/spin into the next shot | A large per-frame estimated zoom amount or rotation angle around the hard cut |
+| `blur` | Defocus and refocus | Detail on both sides of the hard cut is clearly lower than the shot's normal level |
+| `glitch` | Glitch: misalignment, flickering between old and new | Multiple hard jumps within the span, with the picture jumping back to the old shot |
+| `shake` | A burst of shake around the cut point | Large frame-to-frame displacement that cancels itself out |
 
-甩镜、缩放、旋转、模糊、抖动只在硬切周围认：没有硬切的同类运动是镜头内的运镜。
-- MG 节拍：长镜头内"定格 → 动画 → 定格"，两个定格内容差异超过 12%，记为镜头内节拍，不算切镜。
+Whip pans, zooms, spins, blur, and shake are only recognized around a hard cut: the same kind of motion without a hard cut is just in-shot camerawork.
+- Motion-graphics beat: within one long shot, a "hold → animate → hold" pattern where the two holds differ by more than 12% is logged as an in-shot beat, not a cut.

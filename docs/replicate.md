@@ -1,53 +1,53 @@
-# 照着报告复刻
+# Remaking From the Report
 
-报告「自己复刻」一节开头先说这条视频属于哪一类（人物口播、桌拍 / 开箱、vlog、实拍剧情、AI 剧情短片、AI 商品广告、AI 音乐 MV、数字人口播、AI 短片段、3D / 动画、影视解说 / 混剪、动效科普、录屏教程、图片推拉成片、卡点混剪、舞蹈 / 动作表演），再按这类视频的制作顺序列出步骤。类型只决定有哪几步、先后怎么排，每一步的内容都来自这条原片：
+The "Remake It Yourself" section of the report begins by classifying the video format (talking-head, tabletop / unboxing, vlog, live-action drama, AI short drama, AI product ad, AI music video, avatar talking-head, AI short clips, 3D / animation, movie recap / mashup, motion-graphics explainer, screen-capture tutorial, Ken Burns still-image video, beat-synced montage, or dance / action performance), then lists production steps in the order suited to that format. The format only determines which steps exist and their order; the details of every step come from measurements of the original video:
 
-- 拍摄：测出来的景别、机位、布光（主光方向、光比、软硬、色温）、调色，和按测量推的布光做法
-- 生成：几个生成单元、调用几次哪个模型、每个单元要喂的首帧图和参考图
-- 剪辑：镜头数、平均几秒一刀、跳切和推近切、非硬切的转场
-- 包装：字幕的句数、位置、颜色、入场方式，字幕时间轴存成的 SRT 文件
-- 声音：人声和配乐的来源、BPM、调性、音效数量
-- 最后一步：把做好的镜头拼回原时间线，出一条和原片并排的对比片
+- **Filming:** Measured shot sizes, camera positions, lighting (key direction, contrast ratio, softness, color temp), color grade, and inferred lighting setup.
+- **Generation:** Number of generation units, which model to call and how many times, plus first-frame and reference images required for each unit.
+- **Editing:** Shot count, average seconds per cut, jump cuts and punch-in cuts, non-hard transitions.
+- **Packaging:** Subtitle line count, position, color, entrance animation, and the exported SRT timeline.
+- **Audio:** Voice and music source, BPM, key, and SFX count.
+- **Final assembly:** Placing all recreated shots back onto the original timeline and rendering a side-by-side comparison video.
 
-某一项这次没测到，就不写这一步。一条视频常常几种做法都有，另一类占到四分之一时长时，它的步骤也会一起列出来。下面是每种画面的具体做法，最后让 agent 按原时间线拼起来。
+If an aspect wasn't present in the video, that step is omitted. Many videos mix multiple methods; whenever a secondary method makes up at least a quarter of the runtime, its workflow is included as well. Below is how each visual type is remade before the agent stitches everything back onto the original timeline.
 
-## 实拍镜头：自己拍
+## Live-Action Shots: Film Yourself
 
-1. 报告会给出拍摄场次：一共几个场景，每个场景几个机位，先拍哪个；景别、手持还是支架、主光从哪来、要不要补光，以及器材清单。同一场景的镜头即使在成片里是分开的，也排在一起拍。
-2. 按场次拍完，把素材发给 agent，说「按分镜表把我拍的素材剪进去」。
-3. agent 会把每条素材剪到对应镜头的位置和时长，拼回原时间线，再输出一条和原片左右并排的对比片，方便你看节奏对不对。还没拍的镜头先用原片占位，所以可以拍一场看一次。
+1. The report outputs a shooting schedule: total number of locations/sets, camera setups per set, shooting order, framing, handheld vs. tripod/gimbal, key light direction, fill needs, and gear list. Shots from the same set are grouped together even if they appear separated in the final edit.
+2. After filming by set, send the clips to the agent and say: *"Cut my filmed clips into the storyboard timeline."*
+3. The agent trims each clip to its matching shot slot and duration, places it onto the original timeline, and exports a side-by-side comparison video so you can check pacing. Unfilmed shots stay filled with original footage as placeholders, so you can shoot and review one set at a time.
 
-## AI 生成的镜头：交给视频模型
+## AI-Generated Shots: Use Video Models
 
-1. 报告会给出生成单元：同一场景、连在一起的镜头合成一次生成，写明用哪个模型、要准备哪些参考图（产品图、人物图）、多镜头提示词（中文和英文），以及下一次生成怎么接上一次。
-2. 有两种做法：
-   - 手动：把单元提示词和参考图贴到即梦、可灵等网页上生成，再把生成的视频发给 agent，让它拼回原时间线。
-   - 自动：装了 [capsule-cinema](https://github.com/JuneYaooo/capsule-cinema) 的话，说「用 capsule-cinema 复刻 AI 镜头」，agent 会调用视频模型生成，再自动拼回、出对比片。调模型要花钱，所以它会先免费试跑一遍，等你确认后再正式生成。
-3. 目前自动生成还是一个镜头调用一次模型。报告里已经写好了一次生成多个镜头的提示词，这种方式更省钱，但现在只能走手动这条路。
+1. The report outputs generation units: consecutive shots in the same scene are batched into one generation, specifying the model, required reference images (product shots, character sheets), multi-shot prompts (in Chinese and English), and how each generation chains into the next.
+2. Two execution paths:
+   - **Manual:** Paste each unit's prompt and reference images into web tools like Jimeng or Kling, then pass the generated clips to the agent to assemble onto the original timeline.
+   - **Automated:** With [capsule-cinema](https://github.com/JuneYaooo/capsule-cinema) installed, say *"Remake the AI shots using capsule-cinema"*. The agent calls the video models, stitches the results back in, and outputs a comparison video. Because model calls cost money, it runs a free dry run first and waits for your confirmation before generating.
+3. Automated generation currently calls the model once per shot. Multi-shot prompts in the report are already written to save cost, though batch multi-shot generation currently requires the manual path.
 
-## 舞蹈和动作镜头：用原片驱动
+## Dance & Action Shots: Drive From the Original Video
 
-舞蹈、打斗、健身这类镜头，看点是大幅度的全身动作。带货、口播，或全程唱歌、说话只是小幅度动的，不算这一类，照原来的生成单元走，对口型或数字人就能做。只给首尾帧生成，中间的动作全靠模型猜，编舞和卡点会丢，所以报告会把它们单独列成「动作驱动」，不放进生成单元。
+Dance, combat, and fitness shots rely on large full-body motion. Product demos, talking-heads, or singing/speaking shots with small gestures do not fall into this category—they follow normal generation units with lip-sync or avatar tools. Generating from start/end keyframes alone forces the model to guess mid-action motion, losing choreography and beat sync, so the report separates them into an "Action Drive" track instead of normal generation units.
 
-1. 让 agent 跑 `rea-video drive <报告目录>`：擦掉字幕和贴纸，在动作停顿、靠近拍点的地方切成 10 秒左右的短段，每段一个驱动视频。
-2. 准备一张角色设定图（同一套衣服的正面、侧面、背面全身和脸部特写），每段都用它。
-3. 多数情况直接拿驱动视频当参考就行，不用转深度或做白模：单人、全身、一镜到底用 Kling 动作控制；多人、有运镜或中间有剪辑用 Seedance 2.5 全能参考；想本地跑用 Wan Animate。报告按这几点给出这条先用哪种，提示词都写好了：
-   - 原片背景杂乱（街道、人群、杂物），或你的新场景和原片差很多：转成深度视频（`--depth` 或 Video Depth Anything）再喂，只留动作、空间和运镜。
-   - 连空间、机位都要换，或这套动作要反复用：动捕转成白模，在 Blender 里重设机位渲染，再用白模参考生成。
-   - 神态是看点：留在直接参考原片。深度、骨骼和白模只带身体，表情会丢。
-   - 新角色是 Q 版、动物、卡通，体型差很多：用骨骼视频（DWPose + Wan VACE）。
-4. 生成好的段发给 agent，它用 `rea-video drive --join` 拼回原时间线，再出一条和原片并排的对比片，对着原曲看卡点。
+1. Have the agent run `rea-video drive <report_dir>`: removes subtitles and stickers, then splits the video at motion pauses near beat hits into ~10-second driving clips.
+2. Prepare one character turnaround sheet (same outfit: front, side, back full-body plus face close-up) to use across all clips.
+3. In most cases, feed the driving clip directly as reference without depth maps or clay renders: use Kling Motion Control for single-person, full-body, continuous shots; Seedance 2.5 Omni-Reference for multi-person, camera movement, or mid-clip cuts; or Wan Animate for local runs. The report recommends the best option and includes ready-to-use prompts:
+   - **Cluttered original background** (streets, crowds, props) or completely different target scene: convert to a depth video (`--depth` or Video Depth Anything) so only motion, space, and camera move remain.
+   - **Changing space/camera angles** or reusing the same choreography: convert motion capture to a clay/base mesh in Blender, re-render with new camera angles, and use that as generation reference.
+   - **Facial expression is key:** keep direct video reference. Depth, skeleton, and clay renders only transfer body pose and lose facial expressions.
+   - **Different body proportions** (chibi, animal, cartoon): use skeleton video (DWPose + Wan VACE).
+4. Send the generated clips back to the agent; it runs `rea-video drive --join` to stitch them onto the original timeline and exports a side-by-side comparison against the original music.
 
-## 代码 / 界面动效：写代码
+## Code / UI Motion Graphics: Write Code
 
-报告会给出每段的文字、版式和动效节奏。让 agent「按报告写一个 Remotion 工程」，之后改文案只改数据。工具目前不会自动生成这个工程，要 agent 来写。
+The report provides exact text, layout, and animation timing per segment. Tell the agent *"Build a Remotion project from this report"*—afterward, changing copy only requires editing data. The tool does not auto-generate the Remotion project yet; the agent writes it.
 
-## 静图推拉：本地生成
+## Ken Burns (Still Pan/Zoom): Local Generation
 
-一张图加上测出来的缩放和平移速度，agent 在本地直接生成，不用调模型。
+Given one still image and the measured zoom/pan speeds, the agent generates the clip locally without calling any video model.
 
-## 声音：三条轨分别配
+## Audio: Build Three Separate Tracks
 
-- 口播：报告里有文案，用 TTS 生成或自己录。
-- 配乐：按 BPM、调性、风格去曲库找，或者用 Suno 生成。
-- 音效：按时间点表加。
+- **Voiceover:** Script is included in the report; generate with TTS or record yourself.
+- **Music:** Search stock libraries by the measured BPM, key, and style, or generate with Suno.
+- **SFX:** Place sound effects according to the timestamp table.

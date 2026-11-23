@@ -1,8 +1,8 @@
-# 音频：配音 / 克隆 / 音乐 / 音效 / 视频生音效
+# Audio: dubbing / cloning / music / sound effects / video-to-sound-effect
 
 models:
   - id: minimax-speech-2.8
-    name: MiniMax Speech 2.8（Turbo / HD）
+    name: MiniMax Speech 2.8 (Turbo / HD)
     vendor: MiniMax
     category: audio
     release: 2026-06
@@ -10,18 +10,18 @@ models:
     access: [api, api-aggregator]
     primitives: [audio.tts, audio.voice_clone]
     strengths:
-      - "【用户确认】支持音色克隆"
-      - 中文第一梯队，中文是原生优势；支持粤语
-    cost: {note: "Turbo 每百万字符 30–60 美元，HD 每百万字符 50–80 美元（2026-07 第三方数据）"}
+      - "[User-confirmed] supports voice cloning"
+      - First-tier Chinese, a native strength; supports Cantonese
+    cost: {note: "Turbo is $30–60 per million characters, HD is $50–80 per million characters (third-party data, 2026-07)"}
     license: {commercial: true}
     sources:
       - https://peihuachen.github.io/ai-tools-hub/posts/tts-commercial-open-source-comparison-guide-2026.html
     verified: {date: 2026-10-29, basis: user}
     confidence: high
-    notes: 发布月份为估计值
+    notes: Release month is an estimate
 
   - id: indextts-2
-    name: IndexTTS2 / IndexTTS 2.5（开源，B 站）
+    name: "IndexTTS2 / IndexTTS 2.5 (open-source, Bilibili)"
     vendor: Bilibili
     category: audio
     release: 2025-09
@@ -29,11 +29,11 @@ models:
     access: [open-weights]
     primitives: [audio.tts, audio.voice_clone, audio.tts_duration_control]
     strengths:
-      - 自回归 TTS 中少见的显式时长控制，适合把新配音塞进原片时间窗
-      - 情感与音色解耦；零样本克隆；中英双语
+      - Explicit duration control, rare for an autoregressive TTS — good for fitting new dubbing into the original time window
+      - Emotion and timbre are decoupled; zero-shot cloning; Chinese/English bilingual
     weaknesses:
-      - 需要自己部署
-    license: {commercial: conditional, note: 以仓库许可为准}
+      - Needs to be self-hosted
+    license: {commercial: conditional, note: "Per the repo's license"}
     sources:
       - https://arxiv.org/html/2506.21619v2
       - https://arxiv.org/html/2601.03888v3
@@ -41,7 +41,7 @@ models:
     confidence: high
 
   - id: qwen3-tts
-    name: Qwen3-TTS（开源 1.7B / 0.6B）
+    name: "Qwen3-TTS (open-source 1.7B / 0.6B)"
     vendor: Alibaba
     category: audio
     release: 2026-01
@@ -49,17 +49,17 @@ models:
     access: [open-weights, api]
     primitives: [audio.tts, audio.voice_clone]
     strengths:
-      - 3 秒音频即可克隆；支持粤语、四川话、北京话、上海话
-      - Apache 2.0；百炼 API 版支持文本指令控制语气
+      - Can clone from just 3 seconds of audio; supports Cantonese, Sichuanese, Beijing dialect, Shanghainese
+      - Apache 2.0; the Bailian API version supports text-instruction tone control
     license: {commercial: true, note: Apache 2.0}
     sources:
       - https://peihuachen.github.io/ai-tools-hub/posts/tts-commercial-open-source-comparison-guide-2026.html
     verified: {date: 2026-10-29, basis: third-party}
     confidence: medium
-    notes: 发布月份为估计值；克隆所需音频时长资料说法不一（3 秒或 10–20 秒）
+    notes: "Release month is an estimate; sources disagree on the audio length needed to clone (3 seconds, or 10–20 seconds)"
 
   - id: cosyvoice-3
-    name: CosyVoice 3（开源）/ 百炼 CosyVoice v3.5
+    name: "CosyVoice 3 (open-source) / Bailian CosyVoice v3.5"
     vendor: Alibaba
     category: audio
     release: 2025-09
@@ -67,14 +67,14 @@ models:
     access: [open-weights, api]
     primitives: [audio.tts, audio.voice_clone]
     strengths:
-      - 中文第一梯队；零样本克隆
-    cost: {note: "百炼 flash 每万字符 0.8 元，plus 每万字符 1.5 元"}
-    license: {commercial: conditional, note: 以仓库许可为准}
+      - First-tier Chinese; zero-shot cloning
+    cost: {note: "Bailian flash is ¥0.8 per 10k characters, plus is ¥1.5 per 10k characters"}
+    license: {commercial: conditional, note: "Per the repo's license"}
     sources:
       - https://peihuachen.github.io/ai-tools-hub/posts/tts-commercial-open-source-comparison-guide-2026.html
     verified: {date: 2026-10-29, basis: third-party}
     confidence: medium
-    notes: 发布月份为估计值
+    notes: Release month is an estimate
 
   - id: elevenlabs-v3
     name: ElevenLabs Eleven v3
@@ -85,27 +85,27 @@ models:
     access: [api, app]
     primitives: [audio.tts, audio.voice_clone]
     strengths:
-      - 情感表现最好（英文尤其突出）；70 多种语言；有配音（dubbing）流程
-      - Hypit 已接入
+      - Best emotional expressiveness (especially in English); 70+ languages; has a dubbing pipeline
+      - Already integrated into Hypit
     weaknesses:
-      - 没有中文方言；长内容很耗积分
-    cost: {note: 每百万字符约 100 美元}
-    license: {commercial: true, note: 克隆需要明确授权}
+      - No Chinese dialects; long content burns through credits fast
+    cost: {note: "About $100 per million characters"}
+    license: {commercial: true, note: Cloning requires explicit authorization}
     sources:
       - https://peihuachen.github.io/ai-tools-hub/posts/tts-commercial-open-source-comparison-guide-2026.html
     verified: {date: 2026-10-29, basis: third-party}
     confidence: high
 
   - id: doubao-tts
-    name: 豆包语音合成 / 声音复刻（火山引擎）
+    name: "Doubao speech synthesis / voice cloning (Volcano Engine)"
     vendor: ByteDance
     category: audio
     status: ga
     access: [api]
     primitives: [audio.tts, audio.voice_clone]
     strengths:
-      - 音色自然，方言持续扩展；与 Seedance 同属一个生态
-    cost: {note: 每百万字符约 20–50 元}
+      - Natural-sounding timbre, growing dialect coverage; part of the same ecosystem as Seedance
+    cost: {note: "About ¥20–50 per million characters"}
     license: {commercial: true}
     sources:
       - https://peihuachen.github.io/ai-tools-hub/posts/tts-commercial-open-source-comparison-guide-2026.html
@@ -123,7 +123,7 @@ models:
     limits:
       duration_s: {max: 180}
     strengths:
-      - 有 API；可以从文本或图像生成最长 3 分钟的歌曲
+      - Has an API; can generate up to a 3-minute song from text or an image
     license: {commercial: true}
     sources:
       - https://aiunpacking.com/guides/ai-audio-music-generation-guide-2026/
@@ -141,13 +141,13 @@ models:
     limits:
       duration_s: {max: 240}
     strengths:
-      - 4 分钟歌曲，100 多种乐器，可以按段落控制结构；fal.ai 提供 API
+      - A 4-minute song, 100+ instruments, with section-level structure control; fal.ai offers an API for it
     license: {commercial: true}
     sources:
       - https://aiunpacking.com/guides/ai-audio-music-generation-guide-2026/
     verified: {date: 2026-10-29, basis: third-party}
     confidence: medium
-    notes: 发布月份为估计值
+    notes: Release month is an estimate
 
   - id: suno-v5.5
     name: Suno v5.5
@@ -158,11 +158,11 @@ models:
     access: [app]
     primitives: [audio.music_gen]
     strengths:
-      - 音乐质量顶级；支持自定义模型和用自己的声音演唱
+      - Top-tier music quality; supports custom models and singing in one's own voice
     weaknesses:
-      - 没有官方 API，不适合自动化流水线
-      - 免费档不可商用
-    license: {commercial: conditional, note: "Pro / Premier 订阅才有商用权"}
+      - No official API, not suited to an automated pipeline
+      - The free tier can't be used commercially
+    license: {commercial: conditional, note: "Commercial rights require a Pro / Premier subscription"}
     sources:
       - https://aiunpacking.com/guides/ai-audio-music-generation-guide-2026/
     verified: {date: 2026-10-29, basis: third-party}
@@ -178,10 +178,10 @@ models:
     limits:
       duration_s: {max: 30}
     strengths:
-      - 文生音效，可循环；输出 48kHz WAV
+      - Text-to-sound-effect, can loop; outputs 48kHz WAV
     weaknesses:
-      - 不看视频，需要自己按时间码摆放
-    license: {commercial: true, note: Starter 及以上档位}
+      - Doesn't watch the video — you have to place it at the right timecode yourself
+    license: {commercial: true, note: "Starter tier and above"}
     sources:
       - https://www.creativeainews.com/articles/how-to-add-sound-effects-to-ai-video-2026/
     verified: {date: 2026-10-29, basis: third-party}
@@ -196,11 +196,11 @@ models:
     access: [open-weights, api-aggregator]
     primitives: [audio.v2a_foley]
     strengths:
-      - 看视频生成同步音效，48kHz；同步指标最好（DeSync 0.74，MMAudio 为 0.80）
+      - Watches the video to generate synced sound effects, 48kHz; best sync metric (DeSync 0.74, vs. 0.80 for MMAudio)
     weaknesses:
-      - 需要 8–20GB 显存
-      - 许可排除欧盟、英国、韩国（第三方称输出同样受限）
-    license: {commercial: conditional, note: 腾讯社区许可}
+      - Needs 8–20GB of VRAM
+      - License excludes the EU, UK, and South Korea (third parties say the output is similarly restricted)
+    license: {commercial: conditional, note: "Tencent community license"}
     regions_excluded: [EU, UK, KR]
     sources:
       - https://github.com/Tencent-Hunyuan/HunyuanVideo-Foley
@@ -210,7 +210,7 @@ models:
 
   - id: mmaudio
     name: MMAudio
-    vendor: 学术开源
+    vendor: Academic open-source
     category: audio
     release: 2024-12
     status: ga
@@ -219,11 +219,11 @@ models:
     limits:
       duration_s: {max: 8}
     strengths:
-      - 约 6GB 显存即可运行
+      - Runs on about 6GB of VRAM
     weaknesses:
-      - 权重为 CC-BY-NC 4.0，不能商用
-      - 可能生成含糊的类人声；不熟悉的声音处理不好
-    license: {commercial: false, note: "代码 MIT，权重 CC-BY-NC 4.0"}
+      - Weights are CC-BY-NC 4.0, can't be used commercially
+      - Can generate muddled pseudo-voice; handles unfamiliar sounds poorly
+    license: {commercial: false, note: "Code is MIT, weights are CC-BY-NC 4.0"}
     sources:
       - https://www.creativeainews.com/articles/how-to-add-sound-effects-to-ai-video-2026/
     verified: {date: 2026-10-29, basis: third-party}

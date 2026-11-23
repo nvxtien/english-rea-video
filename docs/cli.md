@@ -1,153 +1,151 @@
-# 命令行参考
+# CLI Reference
 
-平时不需要手敲这些命令：把仓库和视频交给 agent，它会按 [SKILL.md](../skills/rea-video/SKILL.md) 调用。这里留给想自己跑、或者想看 agent 在做什么的人。
+Normally you don't need to type these commands manually: hand the repository and video to an agent and it will run them following [SKILL.md](../skills/rea-video/SKILL.md). This reference is for running commands directly or seeing what the agent does under the hood.
 
-## 安装
+## Installation
 
-需要 Python ≥ 3.10 和 ffmpeg（macOS：`brew install ffmpeg`；Ubuntu：`apt install ffmpeg`）。
+Requires Python ≥ 3.10 and ffmpeg (macOS: `brew install ffmpeg`; Ubuntu: `apt install ffmpeg`).
 
 ```bash
-git clone <本仓库> && cd rea-video
-pip install -e ".[ocr]"          # numpy / opencv / pillow / pyyaml / onnxruntime + 可选 OCR
+git clone <this-repo> && cd rea-video
+pip install -e ".[ocr]"          # numpy / opencv / pillow / pyyaml / onnxruntime + optional OCR
 rea-video --help
-bash scripts/install_skill.sh    # 可选：装 CLI 并把 skill 链接到 ~/.claude/skills、~/.codex/skills、~/.agents/skills
+bash scripts/install_skill.sh    # Optional: installs CLI and links skill to ~/.claude/skills, ~/.codex/skills, ~/.agents/skills
 ```
 
-手动装了 `[ocr]` 时，OCR 依赖会再装一套 `opencv-python`，和 rea-video 用的 `opencv-python-headless` 抢同一个 `cv2` 目录。装完跑一次：
-`pip uninstall -y opencv-python && pip install --force-reinstall --no-deps "opencv-python-headless>=4.8,<5"`（`install_skill.sh` 会自动做）。
+When installing `[ocr]` manually, the OCR package also pulls in `opencv-python`, which conflicts with `opencv-python-headless` in the same `cv2` directory. Run once after installing:
+`pip uninstall -y opencv-python && pip install --force-reinstall --no-deps "opencv-python-headless>=4.8,<5"` (`install_skill.sh` handles this automatically).
 
-Claude Code 也可以按插件装 skill（CLI 仍需 `pip install`，skill 第一步会检查）：
+Claude Code can also install the skill as a plugin (still requires `pip install`; step 1 of the skill checks for it):
 
 ```text
 /plugin marketplace add JuneYaooo/rea-video
 /plugin install rea-video@rea-video
 ```
 
-首次拆解会自动下载约 67 MB 的人声分离模型（`~/.cache/rea-video/models`）。一条 30 秒视频不开 VLM 约 1 分钟出结果。
+The first breakdown automatically downloads the ~67 MB vocal-separation model (`~/.cache/rea-video/models`). A 30-second video without VLM takes ~1 minute.
 
-装好 skill 后，在 Claude Code / Codex / zcode 里直接说"帮我拆解这条视频 xxx.mp4，看看是不是 AI 做的"即可，agent 会按 [SKILL.md](../skills/rea-video/SKILL.md) 的流程跑：先看记忆 → 拆解 → 看图复核 → 按模板交付。
+Once installed, simply tell Claude Code / Codex / zcode: *"Break down this video xxx.mp4 and check if it's AI-made"*. The agent follows [SKILL.md](../skills/rea-video/SKILL.md): check memory → decompose → visual review → deliver using the report template.
 
-## 快速开始
+## Quick Start
 
 ```bash
-
-# 1. 只做确定性取证（离线、免费）
+# 1. Deterministic forensics only (offline, free)
 rea-video decompose ref.mp4 -o out/ref
 
-# 2. 加 VLM（建议，不强制）：让多模态大模型看画面，实拍/AI/3D 判断更准
-#    任意 OpenAI 兼容的多模态模型都行，模型可写多个做备选
+# 2. Add a VLM (recommended, optional) for higher accuracy on live / AI / 3D
+#    Any OpenAI-compatible multimodal model works; comma-separate fallbacks
 export REA_VLM_BASE_URL=https://.../v1 REA_VLM_API_KEY=... REA_VLM_MODEL=gemini-2.5-pro,gpt-4o
 rea-video decompose ref.mp4 -o out/ref --vlm
-#    或复用 capsule-cinema 的配置：rea-video --env-file ~/code/github/capsule-cinema/.env decompose ref.mp4 -o out/ref --vlm
-#    VLM 调用全部失败时不会中断，报告和 `rea-video summary` 的 "VLM:" 一行会写明"全部调用失败，等同未开"
+#    Or reuse capsule-cinema's config: rea-video --env-file ~/code/github/capsule-cinema/.env decompose ref.mp4 -o out/ref --vlm
+#    If all VLM calls fail, execution continues and the report / `rea-video summary` marks VLM as disabled
 
 open out/ref/report.html
 
-# 3. 没有 VLM，但 agent 自己能看图（zcode、Claude Code 等多模态 agent）：让 agent 当 VLM
-rea-video survey ref.mp4 -o out/ref  # 先看全片总览再局部细看：定切点、转场和每镜关键帧（答完再跑同一条命令，直到 done）
-rea-video decompose ref.mp4 -o out/ref   # 镜头按 survey 的切点切分
-rea-video review out/ref             # 生成逐镜看图任务和答案模板
-rea-video apply-review out/ref --by zcode   # agent 填完答案后并入结论和报告
+# 3. No VLM API, but your agent can see images (zcode, Claude Code, etc.): let the agent act as VLM
+rea-video survey ref.mp4 -o out/ref     # Overview grid first, then zoomed detail: sets cuts, transitions & keyframes (repeat until done)
+rea-video decompose ref.mp4 -o out/ref  # Splits shots using survey cuts
+rea-video review out/ref                # Generates per-shot review tasks and answer template
+rea-video apply-review out/ref --by zcode  # Merges agent answers into verdict and report
 
-# 4. 用户纠正和偏好会被记住（存在 ~/.rea-video，可用 REA_VIDEO_HOME 改位置）
-rea-video correct out/ref --shots 3 --label still_motion --note "这是定格动画"
-rea-video prefs vlm on && rea-video prefs --note "报告尽量短"
+# 4. User corrections and preferences are remembered (stored in ~/.rea-video; override with REA_VIDEO_HOME)
+rea-video correct out/ref --shots 3 --label still_motion --note "This is stop-motion"
+rea-video prefs vlm on && rea-video prefs --note "Keep reports concise"
 rea-video memory
 
-# 只剥离声音：stems/original.wav（原声）、vocals.wav（人声干声）、music.wav（配乐）、effects.wav（音效）
+# Extract audio stems only: stems/original.wav, vocals.wav, music.wav, effects.wav
 rea-video stems ref.mp4 -o out/ref
 ```
 
-分轨用两个模型，都在本机 CPU 上跑，第一次用时自动下载到 `$REA_VIDEO_MODELS`（默认 `~/.cache/rea-video/models`）：
+Audio stem separation runs locally on CPU using two models, downloaded on first use to `$REA_VIDEO_MODELS` (default `~/.cache/rea-video/models`):
 
-- 人声和配乐：UVR MDX-Net Inst HQ 3（约 67 MB）。
-- 说话人（装了 `rea-video[asr]` 才做）：pyannote segmentation 3.0 + 3D-Speaker CAM++（共约 35 MB）。两个以上的人说话时，每人一条 `stems/voice_S1.wav`…，台词带上是谁说的。
-- 音效：BandIt v2 多语种版（约 149 MB；Watcharasupat、Wu、Orife，[arXiv 2407.07275](https://arxiv.org/abs/2407.07275)，权重为 CC BY-SA 4.0），把声音拆成对白、音乐、音效三轨，取音效轨。报告里的音效从这一轨找，试听片段也从这一轨剪，听不到人声和配乐。速度约为音频时长的 1.5 倍；模型下载不了时，退回到在混音上找音效。
+- **Vocals & BGM:** UVR MDX-Net Inst HQ 3 (~67 MB).
+- **Speaker diarization** (requires `rea-video[asr]`): pyannote segmentation 3.0 + 3D-Speaker CAM++ (~35 MB total). Outputs `stems/voice_S1.wav`, etc. when 2+ speakers are present and tags lines by speaker.
+- **SFX:** BandIt v2 multilingual (~149 MB; Watcharasupat, Wu, Orife, [arXiv 2407.07275](https://arxiv.org/abs/2407.07275), CC BY-SA 4.0), splitting audio into dialogue, music, and effects stems. SFX detection and preview clips come cleanly from the effects stem without vocals or music (~1.5× audio duration; falls back to mixed audio if model download fails).
 
-分轨和文字识别的模型各用几个线程，按机器自动定：苹果芯片用性能核数，其他机器用物理核数，不超过本进程能用的核数（容器限核也算），最多 8 个；要手动指定就设 `REA_VIDEO_THREADS`。线程数对结果的影响在 16 位音频的精度以下，可以忽略。
+Thread counts for stem separation and OCR are auto-selected (performance cores on Apple Silicon, physical cores elsewhere, capped by container limits and max 8); override with `REA_VIDEO_THREADS`.
 
-输出示例（混合片）：
+Example output (mixed media):
 
 ```
-结论：混合制作：代码/模板渲染 59% + AI 生成视频 41%；叠加层：字幕、标题（代码/剪辑软件合成）
-#1 00:00.000 1.38s 代码/模板渲染 → R01 Remotion 重建
-#2 00:01.375 2.50s AI 生成视频（24fps 源、无传感器噪声…）→ R07 首尾帧生成（capsule-cinema）
+Verdict: Mixed: Code / template render 59% + AI-generated video 41%; Overlays: subtitles, titles
+#1 00:00.000 1.38s Code / template render → R01 Remotion rebuild
+#2 00:01.375 2.50s AI-generated video (24fps source, no sensor noise...) → R07 Keyframe generation (capsule-cinema)
 ...
 ```
 
-## 和 capsule-cinema 一起复刻
+## Remaking With capsule-cinema
 
 ```bash
-CC=~/code/github/capsule-cinema   # capsule-cinema 仓库；也可以设 CAPSULE_CINEMA_ROOT，或 rea-video prefs capsule_root $CC 设一次，之后不用再带 --capsule-root
-rea-video plan out/ref --model seedance-2.5                                      # 按 remake/intent.yaml 和模型出复刻方案（报告第二部分）并检查
-rea-video remake-plan out/ref/breakdown.json --capsule-root $CC                  # 方案里的生成单元 → 生成任务（检查有错误时不出）
-rea-video remake-run out/ref/remake/jobs.json                                    # 调 capsule-cinema 生成（会计费，可先 --dry-run）
-rea-video assemble out/ref/breakdown.json out/ref/remake/results.json            # 按原时间线拼回 + 对比片；加 --overlays 把字幕和花字叠回换掉的镜头
+CC=~/code/github/capsule-cinema   # Or set CAPSULE_CINEMA_ROOT / `rea-video prefs capsule_root $CC` once
+rea-video plan out/ref --model seedance-2.5                                      # Generates remake plan (Part 2) from remake/intent.yaml & model
+rea-video remake-plan out/ref/breakdown.json --capsule-root $CC                  # Converts generation units into jobs
+rea-video remake-run out/ref/remake/jobs.json                                    # Runs capsule-cinema generation (paid; test with --dry-run first)
+rea-video assemble out/ref/breakdown.json out/ref/remake/results.json            # Stitches onto original timeline + side-by-side comparison; --overlays restores captions
 rea-video capsule-draft out/ref/breakdown.json --capsule-root $CC --capsule-name my_remake
 ```
 
-- 静态图推拉和静帧：不调模型，本地用测得的缩放和平移参数精确重建。
-- 代码渲染和录屏：报告给出文字轨和版式，用 Remotion 重建。
-- 字幕、花字、贴纸：不进生成提示词。从原片取的参考（参考视频、关键帧、首尾帧）都擦掉了字；生成完用 `assemble --overlays` 叠回。
-- `capsule-draft`：通过 capsule-cinema 自带的 `tool_factory` 注入拆解结果，生成可复用的配方草稿，不需要改 capsule-cinema 的代码。
+- **Ken Burns & still frames:** Rebuilt locally using measured zoom/pan parameters without calling video models.
+- **Code render & screen capture:** Report provides text tracks and layout specs to rebuild in Remotion.
+- **Subtitles, styled captions, stickers:** Excluded from generation prompts; reference frames/videos are cleaned of text before generation, then re-applied via `assemble --overlays`.
+- **`capsule-draft`:** Injects breakdown data via capsule-cinema's `tool_factory` to produce a reusable recipe draft without modifying capsule-cinema's code.
 
-见 [capsule-cinema.md](capsule-cinema.md)。
+See [capsule-cinema.md](capsule-cinema.md).
 
-## 命令
+## Commands
 
-| 命令 | 作用 |
+| Command | Purpose |
 |---|---|
-| `decompose VIDEO [--vlm] [--no-ocr] [--ocr-lang zh\|ja\|ko] [--lang zh\|en] [--no-packaging] [--max-vlm-shots N] [--no-asr] [--asr-lang auto\|bn] [--no-speakers]` | 拆解，输出 breakdown.json、report.html/md、拆片包（`VIDEO.md` + `video/`）、storyboard.jpg、每镜首尾帧，`packaging/`（字幕 SRT、带样式的 ASS、包装时间轴、贴纸截图），以及 `sfx/`（每处音效从原片剪出的一小段，报告音效表里可直接试听）；`--lang en` 让结论、报告、`summary` 输出和 VLM 描述都用英文（默认中文；agent 按用户提问的语言选，`rea-video prefs lang en` 可设成默认；breakdown.json 里的 `*_zh` 字段名保留，内容跟报告语言走）；`--no-packaging` 跳过包装层（省约每分钟 30–50 秒）；`--ocr-lang ja` 用日文识别模型读字幕和花字（首次使用自动下载约 10 MB 到 `$REA_VIDEO_MODELS`，离线时可用 `$REA_OCR_REC_MODEL` 指向本地模型），`rea-video prefs ocr_lang ja` 可设成默认；`--ocr-lang ko` 同理用韩文识别模型（PP-OCRv5，约 14 MB），并关掉文字方向分类（它会把韩文行误判成倒置、读成乱码）；`--max-vlm-shots N` 是最多发给 VLM 的调用数（默认 60），镜头更多时先看最拿不准的，其余只靠确定性取证，`VLM:` 一行会写明送了多少个；装了可选的 `rea-video[asr]` 时会在人声干声上做本地语音识别，带时间的台词写进 `speech.lines` 和报告的脚本表（机器听写，未校对），`--no-asr` 跳过；台词是孟加拉语时加 `--asr-lang bn`，换用孟加拉语识别模型（SenseVoice 不认孟加拉语，会听成英/日/韩文；首次使用自动下载约 90 MB 到 `$REA_VIDEO_MODELS`），`rea-video prefs asr_lang bn` 可设成默认 |
-| `survey VIDEO [-o OUT_DIR] [--vlm] [--no-detail] [--workers N]` | 先看后拆：第一轮把全片排成一张小格总览图（只为找切点，格子小省 token；张数按剪辑快慢定，一半等距、一半放在画面变化多的地方），问每两格之间是同一画面、画面变化多、硬切、转场还是看不清；转场和看不清的地方下一轮放大逐帧再看（总览上已经够密的转场、相邻两帧之间的看不清不再放大，由画面变化曲线定）（转场按变化最大的帧抽，同一轮的任务可以并发，最多三轮）；切点定下来后每镜都上关键帧图（动作多的镜头出候选帧，短镜头几格），让 AI 挑出关键帧、标明是哪一种，并判断画面是怎么做出来的。每张图都填到模型不缩图的大小（约 1568 px / 1.15 MP），一张能放多少格就放多少。问答是 JEV 格式：`state` 放材料，问题带 `criteria`，答案只写选项和概率。结果写进 `survey/timeline.json`（切点、转场时长、每镜关键帧、镜头长度、画面变化曲线、每段底层画面判断），decompose 按它切镜，报告和拆片包的「节奏与关键帧」也来自它。没有 VLM 时由 agent 回答：命令输出要看的图和要写的答案文件，答完再跑同一条命令；`--vlm` 用配置的模型自动答；decompose 开了 VLM 时会自动先跑（`--no-survey` 跳过） |
-| `review OUT_DIR` | 给能看图的 agent 生成逐镜看图任务（review_tasks.json）和答案模板（review_answers.json） |
-| `apply-review OUT_DIR [ANSWERS] [--by NAME] [--lang zh\|en]` | 把 agent 看图的答案和确定性结果融合，重写 breakdown.json 和报告；`--lang` 可以在这一步换报告语言（结论、证据和报告文字重新生成，VLM 已写好的描述和提示词保持原语言） |
-| `correct OUT_DIR --shots N --label L [--real yes/no] [--note]` | 用户指出判错：改正结论和报告，并记入记忆（以后同一文件自动套用，同类镜头复核时提示） |
-| `prefs [KEY VALUE] [--note TEXT]` | 用户偏好：默认引擎、是否默认开 VLM、VLM 配置文件、复核者名字、报告语言（`lang zh\|en`）、给 agent 的自由文字说明 |
-| `memory [--export-labels YAML]` | 看记住了什么（偏好、常见纠正类型）；把纠正导出成评测样本 |
-| `probe VIDEO` | 只看元数据线索（拍摄设备、AIGC 隐式标识、C2PA、编辑器签名） |
-| `summary breakdown.json` | 紧凑打印结论，标出需要复核的低置信镜头 |
-| `videomd OUT_DIR` | 从 breakdown.json 重新生成拆片包（`VIDEO.md` + `video/`，给模型和下游程序读，格式见 [videomd.md](videomd.md)）；decompose 和 apply-review 会自动生成 |
-| `videomd OUT_DIR --check` | 校验目录是否符合拆片包规范，不合格时逐条列出问题 |
-| `pdf OUT_DIR` | 把 report.html 打印成 report.pdf（用本机的 Chrome / Chromium / Edge，`REA_CHROME` 可指定路径；正文的折叠内容展开，时间轴、逐镜取证这类查阅数据保持折叠） |
-| `tiles VIDEO --start --end --every` | 按时间抽帧拼图，近距离复核 |
-| `frames OUT_DIR [--every 0.25] [--points 4000] [--all]` | 代码渲染镜头按场景切分（画上去的东西整体换了位置或形状就算新场景），写出 `frames/`：每场景首 / 中 / 尾原尺寸帧、`scene_XX_layer.png`（画上去那一层的抠图，背景和文字已去掉）、`points/scene_XX.json`（这一层的采样点）、`scenes.json`（底色、背景光、前景颜色、块数、范围、重心随时间的轨迹）；深底浅底都适用；decompose 遇到代码渲染镜头会自动跑 |
-| `compare REF REMAKE [--scenes frames/scenes.json] [-o DIR]` | 逐帧比较复刻和原片画上去的那一层：落在哪、形状重合度、多少；两边各按自己的底色取前景，换了底色也能直接比；并给出要改什么（整体早晚几秒、偏左偏右、铺开范围、多少、前景颜色和底色差多少），整段、每个场景、最差的几帧各一份；`-o` 写出 `compare.json` 和最差时刻的左右对比图 `compare_worst.jpg` |
-| `drive OUT_DIR [--shots 3-7] [--depth] [--no-clean] [--prefer 10] [--max 15]` | 舞蹈 / 动作镜头的驱动视频：擦掉后期字幕和贴纸，在动作停顿、靠近拍点处切段，写出 `drive/seg_XX.mp4`（无声）、`seg_XX_first.jpg`（角色图按它对齐景别和朝向）、`seg_XX_music.wav`、`segments.jpg` 和带各路线提示词的 `README.md`；默认用复刻方案里的「动作驱动」单元（看图复核时 `performance.move` 标出的镜头）；`--depth` 同时出深度视频（需要 transformers + torch） |
-| `drive OUT_DIR --join [RESULTS]` | 把生成好的段（默认 `drive/results.json`：`{"seg_01": 路径}`）按段长对齐、拼起来、按镜头切开，写进 `remake/mine.json`，再跑 `remake` 出对比片 |
-| `eval labels.yaml` | 在带标注的样本上评测准确率和切点 F1 |
-| `capsule breakdown.json` | 导出 capsule-cinema 的视频分析 JSON |
-| `models [ID]` | 列出能力地图里的生成模型；带 id 时打印这个模型的提示词写法和关键帧要求（`models keyframes` 是关键帧通用做法）；`~/.rea-video/capabilities/models/*.yaml` 里补充的模型也会列出 |
-| `plan OUT_DIR [--model ID] [--generate ai\|all]` | 按复刻意图 `remake/intent.yaml`（模型、整条重做还是只做 AI 镜头、换什么）出报告第二部分：生成单元、每次喂什么、提示词草稿和方案检查；`remake/prompts.json` 里按模型写好的最终提示词会做格式检查；拆解结果不变 |
-| `remake-plan` / `assemble` | 把方案里的生成单元写成任务、拼回成片 |
-| `remake-run JOBS [--dry-run] [--only G2\|2,5\|shot_002] [--capsule-root]` | 用 capsule-cinema 执行复刻任务（会计费）；有任务没生成出视频时退出码非 0 |
-| `capsule-draft breakdown.json` | 生成 capsule-cinema 胶囊草稿 |
+| `decompose VIDEO [--vlm] [--no-ocr] [--ocr-lang zh\|ja\|ko] [--lang zh\|en] [--no-packaging] [--max-vlm-shots N] [--no-asr] [--asr-lang auto\|bn] [--no-speakers]` | Full breakdown: outputs `breakdown.json`, `report.html/md`, `VIDEO.md` + `video/`, `storyboard.jpg`, per-shot keyframes, `packaging/` (SRT, styled ASS, timeline, sticker crops), and `sfx/` preview clips. Use `--lang en` for English output (`rea-video prefs lang en` sets default); `--no-packaging` skips overlay analysis (~30–50s/min faster); `--ocr-lang ja\|ko` switches OCR model; `--max-vlm-shots N` caps VLM calls (default 60); `--no-asr` skips local SenseVoice ASR; `--asr-lang bn` switches to Bengali ASR. |
+| `survey VIDEO [-o OUT_DIR] [--vlm] [--no-detail] [--workers N]` | Watch-before-splitting: round 1 builds an overview contact sheet to spot cuts, transitions, and high-change regions; subsequent rounds zoom into transitions/uncertain boundaries (up to 3 rounds), then sample keyframes per shot. Saves `survey/timeline.json` for `decompose`. Without `--vlm`, prints image paths and answer file for the agent to review. |
+| `review OUT_DIR` | Generates per-shot visual review tasks (`review_tasks.json`) and answer template (`review_answers.json`). |
+| `apply-review OUT_DIR [ANSWERS] [--by NAME] [--lang zh\|en]` | Fuses agent visual review answers with deterministic results and regenerates `breakdown.json` and reports. |
+| `correct OUT_DIR --shots N --label L [--real yes/no] [--note]` | Records user corrections, updates verdict/report, and saves to memory for future runs. |
+| `prefs [KEY VALUE] [--note TEXT]` | Manage user preferences (default engine, VLM toggle/config, reviewer name, report language `zh\|en`, agent notes). |
+| `memory [--export-labels YAML]` | Inspect stored preferences and frequent corrections; export corrections as eval labels. |
+| `probe VIDEO` | Inspect metadata clues only (capture device, AIGC implicit tags, C2PA, editor signatures). |
+| `summary breakdown.json` | Print compact verdict and flag low-confidence shots needing review. |
+| `videomd OUT_DIR` | Regenerate `VIDEO.md` + `video/` package from `breakdown.json` (see [videomd.md](videomd.md)). |
+| `videomd OUT_DIR --check` | Validate package against the `VIDEO.md` specification. |
+| `pdf OUT_DIR` | Print `report.html` to `report.pdf` via local Chrome / Chromium / Edge (`REA_CHROME` overrides path). |
+| `tiles VIDEO --start --end --every` | Extract and tile frames over a time range for close inspection. |
+| `frames OUT_DIR [--every 0.25] [--points 4000] [--all]` | Segment code-rendered shots into scenes and extract foreground layers, sampled points, and `scenes.json`. |
+| `compare REF REMAKE [--scenes frames/scenes.json] [-o DIR]` | Frame-by-frame comparison of foreground layers between remake and original, reporting timing offset, position, spread, and color deltas. |
+| `drive OUT_DIR [--shots 3-7] [--depth] [--no-clean] [--prefer 10] [--max 15]` | Prepare driving clips for dance/action shots (cleaned of subtitles/stickers, split at motion pauses near beats). `--depth` also exports depth videos. |
+| `drive OUT_DIR --join [RESULTS]` | Join generated driving clips back onto the original timeline and render a comparison video. |
+| `eval labels.yaml` | Evaluate classification accuracy and cut-detection F1 on labeled samples. |
+| `capsule breakdown.json` | Export video analysis JSON for capsule-cinema. |
+| `models [ID]` | List generative models in the capability map; pass an ID to print prompting & keyframe specs. |
+| `plan OUT_DIR [--model ID] [--generate ai\|all]` | Generate remake plan (Part 2) from `remake/intent.yaml` and validate model prompt formats. |
+| `remake-plan` / `assemble` | Convert generation units into jobs and assemble generated clips onto the timeline. |
+| `remake-run JOBS [--dry-run] [--only G2\|2,5\|shot_002] [--capsule-root]` | Execute remake jobs via capsule-cinema. |
+| `capsule-draft breakdown.json` | Generate a reusable capsule-cinema recipe draft. |
 
-## 工作流（设计目标；目前完成到拆解和 AI 镜头复刻）
+## Workflow Architecture (Roadmap)
 
 ```
 Ingest ─► Decompose ─► Video IR ─► Plan ─► Reconstruct ─► Verify ─► Remix
- 导入      拆解/拉片     源码        路由     重建           差分验证   批量改写
 ```
 
-| 阶段 | 状态 |
+| Stage | Status |
 |---|---|
-| Ingest、Decompose、Video IR（`breakdown.json`） | 已可用，即本仓库主体 |
-| Plan | 已可用：每镜给出复刻路线；AI 类镜头生成 capsule-cinema 任务 |
-| Reconstruct | 部分可用：AI 镜头交给 capsule-cinema，静态图推拉本地重建；代码层只给出文字轨和版式，还不生成 Remotion 工程 |
-| Verify | 部分可用：`assemble` 拼回成片并输出对比视频；自动打分还没做 |
-| Remix | 未开始 |
+| Ingest, Decompose, Video IR (`breakdown.json`) | Ready (core of this repository) |
+| Plan | Ready: assigns per-shot remake routes and generates capsule-cinema jobs for AI shots |
+| Reconstruct | Partial: AI shots via capsule-cinema, Ken Burns locally; code layer outputs text/layout specs (Remotion project written by agent) |
+| Verify | Partial: `assemble` stitches clips and exports side-by-side comparison; automated scoring pending |
+| Remix | Planned |
 
-1. **Ingest（导入）**：probe、抽帧、分离音轨。
-2. **Decompose（拆解）**：确定性 CV 和 VLM 分工。CV 负责精确的时间和位置：切镜、OCR 轨迹、分割、相机运动、节拍、字级对齐；VLM 负责语义：镜头意图、表演、风格。
-3. **Video IR（源码）**：时间线 → 轨道 → 片段。每个片段标注渲染方式（`code` / `gen` / `footage` / `audio`），并附参数、证据和 unknowns。
-4. **Plan（路由）**：读取 [能力地图](../rea_video/capabilities/README.md)，把每个生成单元路由到原语和模型，输出 Shot Recipe，包含成本预估和需要用户确认的节点。
-5. **Reconstruct（重建）**：代码层用 Remotion 等渲染，生成层调用模型，音频层用 TTS、音乐、音效，最后合成。
-6. **Verify（验证）**：检查切点对齐、OCR 文本一致性、布局 IoU、感知相似度、主体一致性、运动轨迹、节拍和口型，输出 scorecard，由 agent 循环修复得分最差的镜头。
-7. **Remix（改写）**：换人、换货、换文案、换语言、换画幅时，只重新渲染受影响的层。
+1. **Ingest:** Probe metadata, extract frames, separate audio stems.
+2. **Decompose:** Split labor between deterministic CV (cuts, OCR tracks, segmentation, camera motion, beats, word alignment) and VLM (intent, performance, style).
+3. **Video IR:** Timeline → tracks → segments, each tagged with render mode (`code` / `gen` / `footage` / `audio`), parameters, evidence, and unknowns.
+4. **Plan:** Consult [Capabilities Map](../rea_video/capabilities/README.md) to route each unit to primitives and models, outputting a Shot Recipe with cost estimates.
+5. **Reconstruct:** Render code layers (Remotion), generate AI layers, produce voice/music/SFX, and composite.
+6. **Verify:** Check cut alignment, OCR text match, layout IoU, perceptual similarity, subject consistency, motion trajectory, beat sync, and lip-sync.
+7. **Remix:** Re-render only affected layers when swapping cast, products, copy, language, or aspect ratio.
 
-## 两种模式
+## Two Modes
 
-- **fidelity（高保真复刻）**：目标是结构、节奏、运镜、文字和动效逐项对齐，用分数说话。
-- **adapt（创意改编）**：保留原片"为什么有效"的关系，比如钩子、揭示、节奏，内容按新主题重写。
+- **fidelity:** Target exact alignment across structure, pacing, camera moves, text, and motion graphics.
+- **adapt:** Preserve *why* the original works (hook, reveal, pacing) while rewriting content for a new topic.
 
-两种模式可以按层混用。例如节奏和运镜走 fidelity，人物和文案走 adapt。
+Modes can be mixed per layer—for example, `fidelity` for pacing and camera motion, `adapt` for characters and copy.

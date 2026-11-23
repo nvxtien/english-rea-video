@@ -1,4 +1,4 @@
-# 图像模型（关键帧 / 首帧 / 分镜 / 画内文字）
+# Image models (keyframes / first frame / storyboards / on-screen text)
 
 models:
   - id: gpt-image-2.5
@@ -10,20 +10,20 @@ models:
     access: [api, app, api-aggregator]
     primitives: [image.t2i, image.edit_multi_ref, image.text_render]
     strengths:
-      - "【用户实测】中文字体效果最好、真实感最高，是中文画内文字和写实首帧的首选"
-      - 指令遵循稳定；可输出透明背景（PNG/WebP）；质量档位可到 xhigh 和 max
+      - "[User-tested] Best Chinese font rendering and highest realism — the top choice for Chinese on-screen text and photorealistic first frames"
+      - Stable instruction-following; can output a transparent background (PNG/WebP); quality tiers go up to xhigh and max
     weaknesses:
-      - 价格与速度取决于质量档位
+      - Price and speed depend on the quality tier
     license: {commercial: true}
     sources:
       - https://www.eachlabs.ai/blog/best-ai-image-generation-models-2026
       - https://developers.openai.com/api/docs/models
     verified: {date: 2026-10-29, basis: user}
     confidence: high
-    notes: 分 sunburst（质量）和 flare（快速）两个版本，已被 gpt-image-2.6 取代；发布日期 9 月或 10 月，来源不一；Hypit 目前接入的是 GPT Image 2（通过 HypiHub，2K/4K 部分画幅不可用）
+    notes: "Comes in a sunburst (quality) and flare (fast) version, now superseded by gpt-image-2.6; release date is reported as September or October depending on the source; Hypit currently integrates GPT Image 2 (via HypiHub, with some 2K/4K aspect ratios unavailable)"
 
   - id: gpt-image-2.6
-    name: GPT Image 2.6（Sunburst / Flare）
+    name: "GPT Image 2.6 (Sunburst / Flare)"
     vendor: OpenAI
     category: image
     release: 2026-11
@@ -31,11 +31,11 @@ models:
     access: [api, app, api-aggregator]
     primitives: [image.t2i, image.edit_multi_ref, image.text_render]
     strengths:
-      - Artificial Analysis 文生图榜第一（Sunburst 最高质量档）
-      - 可以在图上圈出要改的地方（markup 编辑）；能出透明背景、SVG 和动图
+      - "#1 on the Artificial Analysis text-to-image leaderboard (Sunburst, the highest quality tier)"
+      - Can circle an area on the image to edit (markup editing); can output a transparent background, SVG, and animated images
     weaknesses:
-      - 最高质量档一张最长约 2 分钟、价格高；连续多次编辑会漂
-      - 文字的精确位置仍可能不准；中文文字效果官方没有说明
+      - The highest quality tier can take up to about 2 minutes per image at a high price; drifts after several rounds of editing
+      - Exact text positioning can still be off; the vendor doesn't document Chinese-text rendering
     license: {commercial: true}
     sources:
       - https://developers.openai.com/api/docs/guides/image-generation
@@ -43,7 +43,7 @@ models:
       - https://kingy.ai/ai-launch-tracker/chatgpt-images-2-6-2026-11-04/
     verified: {date: 2026-11-12, basis: vendor}
     confidence: medium
-    notes: 2026-11-04 发布；模型 ID gpt-image-2.6-sunburst（质量）/ gpt-image-2.6-flare（快速）；边长 3840 以内且是 16 的倍数，长宽比 1:3–3:1
+    notes: "Released 2026-11-04; model IDs gpt-image-2.6-sunburst (quality) / gpt-image-2.6-flare (fast); side length up to 3840 and a multiple of 16, aspect ratio 1:3–3:1"
 
   - id: nano-banana-2.1
     name: Nano Banana 2.1
@@ -56,17 +56,17 @@ models:
     limits:
       resolutions: [4K]
     strengths:
-      - 速度快；画内文字清晰；支持宽幅和全景
+      - Fast; clear on-screen text; supports wide and panoramic formats
     license: {commercial: true}
     sources:
       - https://www.eachlabs.ai/blog/best-ai-image-generation-models-2026
       - https://aistudio.google.com/docs/models/gemini-nano-banana-2.1
     verified: {date: 2026-11-12, basis: vendor}
     confidence: medium
-    notes: 2026-10-06 发布，模型 ID gemini-nano-banana-2.1；最多 14 张参考图（10 个物体 + 4 个角色）；分辨率写 1K / 2K / 4K（必须大写）；输出都带 SynthID 水印
+    notes: "Released 2026-10-06, model ID gemini-nano-banana-2.1; up to 14 reference images (10 objects + 4 characters); resolution written as 1K / 2K / 4K (must be uppercase); every output carries a SynthID watermark"
 
   - id: nano-banana-2-lite
-    name: Nano Banana 2 Lite（Gemini 3.1 Flash Lite Image）
+    name: "Nano Banana 2 Lite (Gemini 3.1 Flash Lite Image)"
     vendor: Google
     category: image
     release: 2026-06
@@ -74,18 +74,18 @@ models:
     access: [api, api-aggregator]
     primitives: [image.t2i]
     strengths:
-      - 家族里最快最便宜，适合批量出草稿
+      - Fastest and cheapest in the family, good for bulk drafts
     weaknesses:
-      - 官方说不针对多参考图和多轮编辑优化，不适合锁人物或出一组关键帧
+      - "The vendor says it isn't optimized for multiple reference images or multi-round editing — not suited to locking a character or producing a set of keyframes"
     license: {commercial: true}
     sources:
       - https://aistudio.google.com/docs/image-generation
     verified: {date: 2026-11-12, basis: vendor}
     confidence: medium
-    notes: 模型 ID gemini-3.1-flash-lite-image
+    notes: "Model ID gemini-3.1-flash-lite-image"
 
   - id: seedream-5.0
-    name: Seedream 5.0（Lite / Pro / Flash）
+    name: "Seedream 5.0 (Lite / Pro / Flash)"
     vendor: ByteDance Seed
     category: image
     release: 2026-02
@@ -93,15 +93,15 @@ models:
     access: [app, api, api-aggregator]
     primitives: [image.t2i, image.edit_multi_ref, image.text_render, image.storyboard_series, analyze.image_layer_decompose]
     strengths:
-      - 图层分解：输出背景加若干透明 PNG 层，可以用来逆向一帧的版式
-      - 擅长信息图、交互式编辑、写实和多语种文字
-    license: {commercial: true, note: 以平台条款为准}
+      - Layer decomposition: outputs a background plus several transparent PNG layers, usable to reverse-engineer one frame's layout
+      - Strong at infographics, interactive editing, photorealism, and multilingual text
+    license: {commercial: true, note: "Per the platform's terms"}
     sources:
       - https://www.eachlabs.ai/blog/best-ai-image-generation-models-2026
       - https://docs.volcengine.com/docs/82379/1824121
     verified: {date: 2026-11-12, basis: vendor}
     confidence: medium
-    notes: Lite 2026-02（doubao-seedream-5-0-260128）；Pro 2026-06 发布、07-08 上 API（doubao-seedream-5-0-pro-260628）；Flash 2026-09（doubao-seedream-5-0-flash-260915）；组图只有 Lite 支持；参考图 Lite 最多 14 张，Pro / Flash 最多 10 张；Hypit 接入的是 Lite；已有更新的 5.5
+    notes: "Lite released 2026-02 (doubao-seedream-5-0-260128); Pro released 2026-06, API live 07-08 (doubao-seedream-5-0-pro-260628); Flash 2026-09 (doubao-seedream-5-0-flash-260915); only Lite supports batch image sets; up to 14 reference images on Lite, 10 on Pro/Flash; Hypit integrates Lite; 5.5 has since been released"
 
   - id: seedream-5.5
     name: Seedream 5.5
@@ -114,18 +114,18 @@ models:
     limits:
       refs: {image: 10}
     strengths:
-      - 多轮编辑稳定：官方称可以连续改 100 轮，没改的区域保持不动
-      - 密集小字和复杂字形更准；能直接出透明背景、拆图层
+      - Stable across multiple edit rounds — the vendor claims up to 100 successive edits with untouched regions staying put
+      - More accurate on dense small text and complex glyphs; can output a transparent background and decompose layers directly
     weaknesses:
-      - 不支持组图，一组关键帧要逐张出
-      - 第三方测试复杂海报上的小字仍会出错
-    license: {commercial: true, note: 以平台条款为准}
+      - Doesn't support batch image sets — a set of keyframes needs producing one at a time
+      - Third-party testing still finds errors in small text on a complex poster
+    license: {commercial: true, note: "Per the platform's terms"}
     sources:
       - https://seed.bytedance.com/zh/blog/生成更真实-百轮编辑更稳定-seedream-5-5-发布
       - https://docs.volcengine.com/docs/82379/1824121
     verified: {date: 2026-11-12, basis: vendor}
     confidence: medium
-    notes: 2026-11-09 发布，模型 ID doubao-seedream-5-5-261028；即梦、豆包、火山方舟可用；Pro 版还没发布
+    notes: "Released 2026-11-09, model ID doubao-seedream-5-5-261028; available in Jimeng, Doubao, and Volcano Ark; a Pro version hasn't been released yet"
 
   - id: qwen-image-3.0-pro
     name: Qwen Image 3.0 Pro
@@ -136,14 +136,14 @@ models:
     access: [api]
     primitives: [image.t2i, image.edit_multi_ref, image.text_render]
     strengths:
-      - 擅长大段密集文字和长版式；提示词最长 4500 tokens；每次最多 6 张图
+      - Strong with dense blocks of text and long layouts; prompt up to 4500 tokens; up to 6 images per call
     license: {commercial: true}
     sources:
       - https://www.eachlabs.ai/blog/best-ai-image-generation-models-2026
       - https://help.aliyun.com/zh/document_detail/2713156.html
     verified: {date: 2026-10-29, basis: third-party}
     confidence: medium
-    notes: 2026-07-21 邀测、08-05 全面开放；生成和编辑是同一个模型；另有更快更便宜的非 Pro 版 qwen-image-3.0
+    notes: "Invite-only preview 2026-07-21, generally available 08-05; generation and editing are the same model; there's also a faster, cheaper non-Pro version, qwen-image-3.0"
 
   - id: qwen-image-3.0
     name: Qwen Image 3.0
@@ -156,9 +156,9 @@ models:
     limits:
       resolutions: [2048x2048]
     strengths:
-      - 能力和 3.0 Pro 相同（生成和编辑在一个模型里），更快更便宜；一次最多出 6 张
+      - Same capability as 3.0 Pro (generation and editing in one model), faster and cheaper; up to 6 images per call
     weaknesses:
-      - 不开源
+      - Not open-source
     license: {commercial: true}
     sources:
       - https://help.aliyun.com/zh/document_detail/2713156.html
@@ -166,7 +166,7 @@ models:
     confidence: medium
 
   - id: qwen-image-2.1
-    name: Qwen Image 2.1（开源 7B，含 Pro / Turbo API）
+    name: "Qwen Image 2.1 (open-source 7B, plus a Pro / Turbo API)"
     vendor: Alibaba
     category: image
     release: 2026-09
@@ -177,18 +177,18 @@ models:
       resolutions: [2K]
       refs: {image: 10}
     strengths:
-      - 7B 小模型，本地能跑；Turbo 约 0.016 美元/张
-      - 生成、编辑、抠图在一个模型里，能直接出透明背景；可以圈选、涂抹或给蒙版做局部编辑
+      - A small 7B model, runs locally; Turbo costs about $0.016/image
+      - Generation, editing, and cutout are one model, can output a transparent background directly; local edits via a circled region, a scribble, or a mask
     weaknesses:
-      - 开源权重只能研究用，商用要走 API 或单独授权
-      - 榜单排名低于 3.0
-    license: {commercial: conditional, note: 权重为 Qwen Research License，仅限研究；API 可商用}
+      - The open-source weights are research-only — commercial use needs the API or a separate license
+      - Ranks lower than 3.0 on leaderboards
+    license: {commercial: conditional, note: "Weights are under the Qwen Research License, research-only; the API can be used commercially"}
     sources:
       - https://www.alibabacloud.com/blog/qwen-image-2-1-pro-and-turbo-apis-are-live-one-7b-model-to-generate-edit-and-cut-out_603679
       - https://huggingface.co/Qwen/Qwen-Image-2.1
     verified: {date: 2026-11-12, basis: vendor}
     confidence: medium
-    notes: 权重 2026-09-20 开放，Pro / Turbo API 2026-10-09 上线
+    notes: "Weights released 2026-09-20; Pro/Turbo API launched 2026-10-09"
 
   - id: flux-3
     name: FLUX 3 Image
@@ -202,16 +202,16 @@ models:
       resolutions: [768p, 1K, 2K, 4K]
       refs: {image: 10}
     strengths:
-      - 可以按包围框精确摆放元素，适合按原片布局复刻版式；多语种文字
+      - Can place elements precisely by bounding box, good for remaking a layout that follows the original; multilingual text
     weaknesses:
-      - 默认开启网页和图片搜索 grounding
+      - Web and image-search grounding are on by default
     license: {commercial: true}
     sources:
       - https://www.eachlabs.ai/blog/best-ai-image-generation-models-2026
       - https://docs.bfl.ai/release-notes
     verified: {date: 2026-11-12, basis: vendor}
     confidence: medium
-    notes: 2026-07-23 发布家族预告，FLUX 3 Image 2026-10-01 上 API；用参考图时输出最高 4MP；10-22 起支持 256px 到 16.8MP 的自定义尺寸
+    notes: "The family was teased 2026-07-23, FLUX 3 Image hit the API 2026-10-01; output is up to 4MP when using a reference image; from 10-22 it supports a custom size from 256px to 16.8MP"
 
   - id: flux-3-klein
     name: FLUX 3 Image Klein
@@ -225,18 +225,18 @@ models:
       resolutions: [768p, 1K, 2K, 4K]
       refs: {image: 10}
     strengths:
-      - 5.6B 参数，消费级显卡（RTX 3090）能跑；每张 0.008–0.036 美元
+      - 5.6B parameters, runs on a consumer GPU (RTX 3090); $0.008–0.036 per image
     weaknesses:
-      - 开源许可的名称和商用条款没有核实
-    license: {commercial: conditional, note: 开源权重的商用条款待核实}
+      - The open-source license's name and commercial terms haven't been verified
+    license: {commercial: conditional, note: "Commercial terms of the open-source weights need verifying"}
     sources:
       - https://docs.bfl.ai/release-notes
     verified: {date: 2026-11-12, basis: vendor}
     confidence: medium
-    notes: 2026-10-15 发布；有蒸馏版（16 步）和基础版（50 步）
+    notes: "Released 2026-10-15; comes in a distilled version (16 steps) and a base version (50 steps)"
 
   - id: kling-o3-image
-    name: Kling Image 3.0 / 3.0 Omni（O3 Image）
+    name: "Kling Image 3.0 / 3.0 Omni (O3 Image)"
     vendor: Kuaishou
     category: image
     release: 2026-02
@@ -246,19 +246,19 @@ models:
     limits:
       resolutions: [1K, 2K, 4K]
     strengths:
-      - 支持参考图和 element 锁定身份与风格
-      - 分镜组图模式适合一次出整套关键帧
-    license: {commercial: true, note: 以平台条款为准}
+      - Supports reference images and elements to lock identity and style
+      - The storyboard batch mode is good for producing a whole keyframe set in one call
+    license: {commercial: true, note: "Per the platform's terms"}
     sources:
       - https://help.artlist.io/hc/en-us/articles/37026869403933-Kling-3-Model-Family
       - https://kling.ai/document-api/api/image/3-0-omni/image-omni.md
       - https://kling.ai/blog/kling-image-3-vs-omni
     verified: {date: 2026-11-12, basis: vendor}
     confidence: medium
-    notes: 2026-02-05 起向高级会员开放；API 名 kling-v3-omni；提示词最长 2500 字符；图片加主体最多 10 个；组图 2–9 张（只有 Omni 版有）
+    notes: "Opened to premium members from 2026-02-05; API name kling-v3-omni; prompt up to 2500 characters; up to 10 subjects across images; batch mode is 2–9 images (Omni version only)"
 
   - id: minimax-h3-image
-    name: MiniMax H3 Image（含 Highspeed）
+    name: "MiniMax H3 Image (including Highspeed)"
     vendor: MiniMax
     category: image
     release: 2026-11
@@ -269,19 +269,19 @@ models:
       resolutions: [1K, 2K, 4K]
       refs: {image: 16}
     strengths:
-      - 4K 出图快（厂商称约 10 秒）；提示词可以很长（最长 32000 字符）
-      - 权重开放
+      - Fast 4K generation (vendor claims about 10 seconds); prompt can be very long (up to 32000 characters)
+      - Weights are open
     weaknesses:
-      - 本地运行要约 135 GB；许可限制多（据报道排除欧盟、英国、韩国、美国，营收超 100 万美元要授权）
-      - 质量证据主要来自厂商；中文文字没有测试
-    license: {commercial: conditional, note: MiniMax-H3-Image Community License}
+      - Needs about 135 GB to run locally; many license restrictions (reportedly excludes the EU, UK, South Korea, and the US; needs a license once revenue exceeds $1M)
+      - Quality evidence mostly comes from the vendor; Chinese text hasn't been tested
+    license: {commercial: conditional, note: "MiniMax-H3-Image Community License"}
     sources:
       - https://platform.minimax.io/docs/api-reference/image-generation-h3-generations.md
       - https://www.orcarouter.ai/blog/minimax-h3-image-launch
       - https://www.ifanr.com/1688790
     verified: {date: 2026-11-12, basis: vendor}
     confidence: medium
-    notes: 2026-11-10 发布；请求不是幂等的，重试会再计费
+    notes: "Released 2026-11-10; requests aren't idempotent — a retry gets billed again"
 
   - id: grok-imagine-image-2.0
     name: Grok Imagine Image 2.0
@@ -295,10 +295,10 @@ models:
       resolutions: [1K, 2K]
       refs: {image: 5}
     strengths:
-      - 一次最多出 10 张；16 种画幅
+      - Up to 10 images per call; 16 aspect ratios
     weaknesses:
-      - 文字渲染和中文官方没有说明
-    license: {commercial: true, note: 以平台条款为准}
+      - The vendor doesn't document text rendering or Chinese
+    license: {commercial: true, note: "Per the platform's terms"}
     sources:
       - https://docs.x.ai/docs/models/grok-imagine-image-2.0
       - https://docs.x.ai/docs/guides/image-generations
@@ -306,7 +306,7 @@ models:
     confidence: medium
 
   - id: mai-image-2.6
-    name: MAI-Image-2.6（含 Flash）
+    name: "MAI-Image-2.6 (including Flash)"
     vendor: Microsoft AI
     category: image
     release: 2026-08
@@ -317,15 +317,15 @@ models:
       resolutions: [1.5K]
       refs: {image: 5}
     strengths:
-      - 带联网 grounding；厂商称文字渲染精准
+      - Has web grounding; the vendor claims precise text rendering
     weaknesses:
-      - 最高 1.5K；榜单中游
-    license: {commercial: true, note: 以 Azure 条款为准}
+      - Tops out at 1.5K; mid-pack on leaderboards
+    license: {commercial: true, note: "Per Azure's terms"}
     sources:
       - https://techcommunity.microsoft.com/t5/microsoft-foundry-blog/mai-image-2-6-and-mai-image-2-6-flash-quality-and-speed-at/ba-p/4550970
     verified: {date: 2026-11-12, basis: vendor}
     confidence: medium
-    notes: 2026-08-10 发布，09-04 进 Foundry 公测；2026-10-27 另有只做编辑的 MAI-Image-2.7 Preview
+    notes: "Released 2026-08-10, entered Foundry public preview 09-04; a separate edit-only MAI-Image-2.7 Preview followed on 2026-10-27"
 
   - id: ideogram-4.5
     name: Ideogram 4.5
@@ -339,15 +339,15 @@ models:
       resolutions: [2K]
       refs: {image: 4}
     strengths:
-      - 主打精确编辑：反复修改不漂移，可以加蒙版
+      - Focused on precise editing — repeated edits don't drift, and masking is supported
     weaknesses:
-      - 中文文字没有核实；价格各来源说法不一
-    license: {commercial: conditional, note: 以 Ideogram 条款为准；4.0 的开源权重是非商用协议}
+      - Chinese text hasn't been verified; pricing is reported inconsistently across sources
+    license: {commercial: conditional, note: "Per Ideogram's terms; 4.0's open-source weights are under a non-commercial license"}
     sources:
       - https://ideogram.ai/licensing/
     verified: {date: 2026-11-12, basis: third-party}
     confidence: low
-    notes: 2026-09-30 发布；4.0 于 2026-06 发布
+    notes: "Released 2026-09-30; 4.0 was released 2026-06"
 
   - id: midjourney-v8.2
     name: Midjourney V8.2
@@ -360,15 +360,15 @@ models:
     limits:
       resolutions: [2K]
     strengths:
-      - 画面美感和风格化强，很多创作者用它出首帧；--sref 风格参考可以锁住统一画风
+      - Strong aesthetics and stylization — many creators use it for first frames; --sref style reference can lock a consistent look
     weaknesses:
-      - 只有 App，没有官方 API
-      - 角色参考 --oref 在 V8 上的支持情况各来源说法不一；--cref 不支持
-    license: {commercial: conditional, note: 以 Midjourney 订阅条款为准}
+      - App only, no official API
+      - Sources disagree on V8's support for the character reference --oref; --cref isn't supported
+    license: {commercial: conditional, note: "Per Midjourney's subscription terms"}
     sources:
       - https://vidmuse.ai/blog/midjourney-8-2
       - https://evolink.ai/docs/en/api-manual/image-series/midjourney/midjourney-v8-1-prompt-guide.md
       - https://blakecrosley.com/en/guides/midjourney
     verified: {date: 2026-11-12, basis: third-party}
     confidence: low
-    notes: 2026-07-24 成为默认版本；V8.1 于 2026-04 推出，原生 2K
+    notes: "Became the default version 2026-07-24; V8.1 launched 2026-04, native 2K"
