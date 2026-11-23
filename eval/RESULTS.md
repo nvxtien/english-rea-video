@@ -1,179 +1,158 @@
-# 评测结果
+# Evaluation Results
 
-运行配置：**只用确定性取证 + OCR，没开 VLM**（VLM 用来补强"实拍 / AI / 3D"的区分、AI 图和真实照片的区分，以及轻音效）。复现命令见文末。
+Configuration: **Deterministic forensics + OCR only, VLM disabled** (VLM strengthens live/AI/3D separation, real photo vs. AI image distinction, and subtle SFX). Reproduction commands are at the bottom.
 
-## 1. 底层画面制作方式（8 类，按镜头时长加权）
+## 1. Base Visual Production Method (8 classes, duration-weighted)
 
-| 集合 | 视频数 | 准确率 | 切点 F1 | 独立性 |
+| Dataset | Videos | Accuracy | Cut F1 | Independence |
 |---|---|---|---|---|
-| `labels.yaml`（调参集） | 15 | **98.3%** | 1.00（2 条有真值，含 14 处 0.25s 交叉溶解） | 规则在这批样本上设计 |
-| `holdout.yaml` | 9 | **99.6%** | — | 首轮错了 2 处，据此加了帧率相关规则，已不完全独立 |
-| `holdout2.yaml` | 7 | **98.9%** | — | 制作方式规则定稿后才第一次运行 |
+| `labels.yaml` (tuning set) | 15 | **98.3%** | 1.00 (2 ground-truth clips, incl. 14 × 0.25s cross-dissolves) | Rules designed on this set |
+| `holdout.yaml` | 9 | **99.6%** | — | 2 initial errors led to frame-rate rules; no longer strictly independent |
+| `holdout2.yaml` | 7 | **98.9%** | — | Run after production-method rules were finalized |
 
-调参集的混淆矩阵（秒）：实拍 16.0 全对；AI 视频 141.2 全对；3D 66.5 全对；代码渲染 155.9 对、2.4 错判为 3D；录屏/截图 19.0 全对；静帧 42.8 对、5.3 错判为代码渲染。
+Tuning-set confusion matrix (seconds): live action 16.0/16.0; AI video 141.2/141.2; 3D 66.5/66.5; code render 155.9 correct, 2.4 misclassified as 3D; screen capture 19.0/19.0; still hold 42.8 correct, 5.3 misclassified as code render.
 
-这张表是从头解码（不复用缓存特征）测的；复用缓存特征时是 99.9% / 99.6% / 99.8%，差别来自解码阶段的一处改动，缓存没有覆盖到。各集按来源片段切分而不是按制作方切分，同一套制作的不同片段会分在调参集和留出集两边，留出集的数字应按"相近样本上的表现"理解。
+Decoded from scratch (no cached features); with cached features scores are 99.9% / 99.6% / 99.8% due to a decoding-stage change not reflected in old caches. Splits are by clip source rather than creator, so holdout numbers reflect performance on similar-style samples.
 
-## 2. 用户真实素材（镜头里有没有实拍 / 截图 / 录屏 / 照片，按时长加权）
+## 2. User Real Assets (whether a shot contains live footage / screenshot / screen capture / photo, duration-weighted)
 
-| 集合 | 准确率 | 说明 |
+| Dataset | Accuracy | Notes |
 |---|---|---|
-| labels | 97.6% | 唯一错误：mediank 的暗色半透明 NASA 背景照片漏检（已知局限） |
-| holdout | 99.6% | 首轮有 2 处误报：浅色代码画面的字幕被当成截图；3D 毛发被当成嵌入视频。规则调整后的结果 |
-| holdout2 | 97.2% | **首轮只有 75.6%**：字幕带被当成照片/视频；嵌入图片默认算作"真实"。规则调整后已不独立。剩余错误：暗色主题网页截图漏检 |
+| labels | 97.6% | Single miss: dark semi-transparent NASA background photo in `mediank` (known limitation) |
+| holdout | 99.6% | 2 initial false positives (subtitles on light code UI; 3D fur); fixed by rule adjustments |
+| holdout2 | 97.2% | **Initial run was 75.6%** (subtitle band counted as photo/video; embedded images defaulted to "real"). Remaining miss: dark-theme webpage screenshot |
 
-首轮之后调整的规则：
-- 文字按单帧计数，避免不同时刻的字幕被累加。
-- 字幕带不参与照片/视频判断。
-- 嵌入的照片/视频片段默认标为"真实还是 AI 待确认"，只有截图和录屏直接算真实素材。
-- 3D 画面里只认截图面板。
+Rule updates after round 1:
+- Count text per single frame rather than accumulating across timestamps.
+- Exclude subtitle bands from photo/video asset detection.
+- Mark embedded photo/video regions as "real vs. AI to be confirmed"; only UI screenshots and screen recordings count directly as confirmed real assets.
+- Only detect UI screenshot panels inside 3D shots.
 
-## 3. 声音
+## 3. Audio
 
-| 项 | 结果 | 真值来源 |
+| Metric | Result | Ground Truth Source |
 |---|---|---|
-| 有无人声 | 5/5 | capsule-cinema 的 tts.py、口播视频 |
-| 有无 BGM | 4/4 | bgm.py、bgm_fit.json |
-| BPM（±4%，含半速/倍速） | 2/2（110.0 / 112.3 vs 真值 110.15） | bgm_fit.json |
-| 调性 | 2/2（D major） | bgm_fit.json |
-| 有无音效（≥3 处） | 2/4 | cues.py、素材清单 |
-| 音乐来源 | 2/5（见下） | Suno 生成记录、曲库下载记录 |
+| Voice present | 5/5 | `capsule-cinema` `tts.py`, talking-head clips |
+| BGM present | 4/4 | `bgm.py`, `bgm_fit.json` |
+| BPM (±4%, incl. half/double time) | 2/2 (110.0 / 112.3 vs. 110.15) | `bgm_fit.json` |
+| Musical key | 2/2 (D major) | `bgm_fit.json` |
+| SFX present (≥3 events) | 2/4 | `cues.py`, asset manifests |
+| Music source | 2/5 (see below) | Suno logs, stock library download records |
 
-**音效是确定性层的短板**：在咸鸭蛋的人声 + BGM 混音里，对照 cues.py 的 110 个音效真值，信号特征完全区分不了音效和语音/音乐起音（精度约 0.2，与随机相当）。所以现在只在人声之外、且极其突出的瞬态上给出"低置信候选"，**完整的音效清单交给 VLM（Gemini 能听）**。
+**SFX is the weak spot of deterministic audio:** On `salted_egg`'s voice + BGM mix (110 ground-truth cues), signal features alone cannot separate SFX from speech/music onsets (~0.2 precision). Deterministic analysis now only flags prominent non-vocal transients as low-confidence candidates; **full SFX detection relies on an audio-capable VLM (Gemini)**.
 
-**音乐来源**按"视频形式先验 + 证据"判断（规则见 `skills/rea-video/references/audio.md`）。不开 VLM、不给平台信息时：
+**Music source** combines video-format priors + audio evidence (rules in `skills/rea-video/references/audio.md`), without VLM or platform metadata:
 
-| 视频 | 形式 | 真值 | 判断 |
+| Video | Format | Ground Truth | Prediction |
 |---|---|---|---|
-| qing_hiphop_mv | AI 说唱 MV（干声副歌重复 0.26） | Suno v6 | AI 生成 52% ✓ |
-| mediank_pure_data | 纯配乐 | 曲库 manten diloty | 现成曲库 60% ✓ |
-| monkey_wine_v3 / salted_egg / birdnest | TTS 旁白 + BGM（干声副歌重复 0.00） | Suno 生成 | 现成曲库 52% ✗ |
+| `qing_hiphop_mv` | AI rap MV (dry vocal chorus repeat 0.26) | Suno v6 | AI-generated 52% ✓ |
+| `mediank_pure_data` | Pure instrumental | Stock (`manten diloty`) | Stock library 60% ✓ |
+| `monkey_wine_v3` / `salted_egg` / `birdnest` | TTS narration + BGM (chorus repeat 0.00) | Suno-generated | Stock library 52% ✗ |
 
-三个错例是**先验本身的局限**：AI 工作流做出来的普通视频，BGM 也常是 Suno 生成的，而 Suno 器乐和曲库器乐从信号上分不开。之前 3/3 是因为"满屏音乐 + 有人声"误把 TTS 旁白当成 MV，属于碰对；现在加了唱/说区分，判断理由对了，准确率反而如实下降。纠正这三条要靠平台音乐标签（`--meta`）或听歌识曲，所以报告里普通配乐一律写"倾向曲库，待确认"。注意唱/说的阈值是看过 qing MV 之后定的，这条属于开发集。
+The 3 misses reflect a **prior limitation**: AI-workflow explainers often use Suno instrumental BGM, which is signal-indistinguishable from stock instrumentals. Correcting those requires platform music tags (`--meta`) or audio fingerprinting, so ordinary BGM defaults to "likely stock, to be confirmed".
 
-**人声分离**（`stems/`）：把咸鸭蛋的一句 TTS 叠在它的 Suno BGM 上（人声高 6 dB），分离 SDR 人声 19.7 dB、配乐 19.7 dB；纯 BGM 漏进人声轨 −42.5 dB。mediank 的键盘音效会落进人声轨（瞬态音效的已知去向）。说唱 MV 在混音上测的持续音高是 0.44，在干声上只有 0.24——混音上的数字被伴奏的长音抬高了，所以现在唱/说一律在干声上测。
+**Vocal separation (`stems/`):** On `salted_egg` TTS mixed over Suno BGM (+6 dB vocal), separation achieves 19.7 dB SDR for both voice and music, with −42.5 dB BGM leakage into the vocal stem. Dry-stem vocal pitch continuity is 0.24 on rap MV vs. 0.44 on full mix, so singing vs. speech is always measured on the dry vocal stem.
 
-## 4. 平台转码视频（OiiOii 文章里的 10 条，开发集）
+## 4. Platform-Recompressed Videos (10 OiiOii article clips, dev set)
 
-`eval/articles.yaml`：从两篇公众号文章下载的微信转码版（30fps、二次压缩）。真值来自文章作者说明 + 人工看画面。转码相关的规则是看过这批视频后加的，所以这是开发集。
+`eval/articles.yaml`: WeChat-transcoded 30fps downloads. Transcode-handling rules were tuned on this set.
 
-| 视频 | 真值 | 加转码规则前 | 加转码规则后 |
+| Video | Ground Truth | Before Rules | After Rules |
 |---|---|---|---|
-| v11 TikTok 带货原片 | 实拍 | AI 100%（0.0） | 实拍 100%，标"实拍还是 AI 待确认"（1.0） |
-| v09 Gemini 发布片 | 2D UI 动效 | 代码 63% + 3D 37%（0.63） | 代码 81% + 3D 19%（0.81） |
-| v10 OiiOii 产品片 | 代码 UI 动效 | 代码 78% + 3D 17%（0.83） | 代码 92% + 3D 4%（0.96） |
-| v04 推广片原片 | 3D 元素 + 文字动效 | 3D 65% + AI 35%（0.65） | 不变（0.65） |
-| 其余 6 条 AI 视频 / 拼屏 | — | 全对 / 0.8 | 不变 |
-| **平均** | | **0.79** | **0.92** |
+| v11 TikTok product demo | Live action | AI 100% (0.0) | Live action 100%, flagged "confirm live vs AI" (1.0) |
+| v09 Gemini launch | 2D UI motion | Code 63% + 3D 37% (0.63) | Code 81% + 3D 19% (0.81) |
+| v10 OiiOii product promo | Code UI motion | Code 78% + 3D 17% (0.83) | Code 92% + 3D 4% (0.96) |
+| v04 promo | 3D + kinetic text | 3D 65% + AI 35% (0.65) | Unchanged (0.65) |
+| Remaining 6 AI / split-screen clips | — | All correct / 0.8 | Unchanged |
+| **Average** | | **0.79** | **0.92** |
 
-转码规则有三条：
-1. 识别平台转码（元数据 `Tencent CAPD MTS` / `Wxmm_` / `vid:v…`）。转码后噪声证据失效，"没有噪声"不再推向 AI；清晰度节奏（会被转码的 GOP 结构伪造）不再当插帧证据。
-2. 整片级帧率证据：30fps 文件里，实拍类镜头 ≥70% 时长没有重复帧 → 倾向手机直出（生成模型多输出 24fps，转 30fps 后有 20% 重复帧）。
-3. 几乎无彩色、只用个位数颜色的平面画面判为界面/文档，不判 3D。
+Three transcode rules:
+1. Detect platform transcoding (`Tencent CAPD MTS` / `Wxmm_` / `vid:v…`); disable noise absence as an AI signal and ignore GOP-induced sharpness periodicity.
+2. Whole-video frame-rate signal: in 30fps files, ≥70% duplicate-free live-like duration favors phone capture over 24fps AI sources.
+3. Nearly achromatic flat frames using only a handful of colors classify as UI/document rather than 3D.
 
-加这三条规则前后，前三个评测集的制作方式分数不变。上表是加规则当时的逐条得分；这一组现在只用工具的整体得分是 88.6%（见第 5 节）。
+### Text-only Agent Review (`dsh`, DeepSeek V4.1 Flash, no vision)
 
-### agent 复核（dsh，DeepSeek V4.1 Flash，不能看图）
+Across 11 ground-truth clips: tools-only got 5 full / 5 partial / 1 wrong; `dsh` got 6 full / 2 partial / 3 wrong, overturning tools 4 times (2 right, 2 wrong). `SKILL.md` now forbids non-vision agents from overturning tool production-method calls.
 
-11 条有真值时：工具全对 5 / 部分对 5 / 错 1；dsh 复核后全对 6 / 部分对 2 / 错 3。dsh 推翻工具 4 次，2 对 2 错，错的两次都是凭像素统计改判画面类型。为此 SKILL.md 增加了"看不了图时不得推翻工具的制作方式判断"。复测方法见 `eval/agent_test/README.md`。
+## 5. After Visual Review (production method, duration-weighted)
 
-## 5. 看图之后（制作方式，按时长加权）
-
-| | holdout（9） | holdout2（7） | 转码视频（10，开发集） |
+| | `holdout` (9) | `holdout2` (7) | Transcoded (10, dev) |
 |---|---|---|---|
-| 只用工具 | 99.6% | 99.8% | 88.6% |
-| + 看图模型（Gemini） | 99.6% | 99.8% | 99.6% |
-| + agent 看图复核 | 99.6% | 99.8% | 100% |
-| 两者都开 | 99.6% | 99.8% | 98.8% |
+| Tools only | 99.6% | 99.8% | 88.6% |
+| + Vision model (Gemini) | 99.6% | 99.8% | 99.6% |
+| + Agent visual review | 99.6% | 99.8% | 100% |
+| Both enabled | 99.6% | 99.8% | 98.8% |
 
-这张表用的是缓存特征（所以 holdout2 的「只用工具」是 99.8%，从头解码是第 1 节的 98.9%）；看图的答案来自一次盲测：视频改名后交给另一个 agent 按 `eval/agent_test/JOB.md` 跑完整流程。
+Uses cached features (hence 99.8% for `holdout2` tools-only vs. 98.9% decoded from scratch). Blind agent review followed `eval/agent_test/JOB.md`.
 
-只有一个看图来源时，它只能在工具拿不准的地方起作用；工具、看图模型、agent 三方里，工具和任一看图方一致就以此为准。两个看图方一致反对工具时不强制改判：试过三方任意多数，转码视频这一组反而从 98.4% 掉到 91.9%，两个看图模型常把同一画面看错成同一类。
+## 6. First-Run Unseen Samples
 
-## 6. 第一次跑的样本（规则没有看过它们）
-
-| 集合 | 只用工具 | + 看图模型 | + agent 看图复核 |
+| Dataset | Tools Only | + Vision Model | + Agent Visual Review |
 |---|---|---|---|
-| 抖音带货 2 条（实拍开箱；AI 与真人混合的教程），`daihuo.yaml` | 46.4% | 63.9% | 97.5% |
-| 其中真实素材 | 62.4% | 86.8% | 97.5% |
-| 抖音口播 2 条（夜景街头；室内近景），`koubo.yaml`，开发集 | 75.5%（51% / 99%） | 88.5% | 96.7% |
+| Douyin product demos (2 clips: unboxing + AI/live tutorial), `daihuo.yaml` | 46.4% | 63.9% | 97.5% |
+| — Real assets on above | 62.4% | 86.8% | 97.5% |
+| Douyin talking-head (2 clips: night street + indoor close-up), `koubo.yaml` | 75.5% (51% / 99%) | 88.5% | 96.7% |
 
-带货这一组是现有规则第一次遇到的内容，最能说明没见过的视频上只用工具会怎样：转码后静止的俯拍手部镜头会被判成 AI；相机拍真实手机屏幕（不是录屏）的画面会被判成 3D 或 AI，看图模型判对了，但融合规则在「工具判 3D、看图判实拍」时跟了工具，要靠 agent 复核才纠回来。口播这一组的规则是看着这两条调的，夜景那条只用工具仍只有一半。
+Cut detection across 9 frame-annotated clips (talking-head, unboxing, movie mashups, phone demos): **95% recall, 94% precision**.
 
-切点：9 条有逐帧人工标注切点的片子（口播、带货、影视混剪、手机实拍带货），召回 95%、精确率 94%。
+### Agent Visual Review Only (no VLM API)
 
-### 不开看图模型，只用 agent 看图复核
+When no VLM is configured, the agent inspects per-shot contact sheets alongside tool evidence and `SKILL.md` rules and may override the tool's top-2 choices (provided no 24→30fps duplicate-frame cadence contradicts it):
 
-没有看图模型（没配 VLM，或服务不可用）时，agent 是唯一的看图方。agent 看的是逐镜首中尾联系表，旁边有工具的证据和 SKILL.md 的规则，所以它的判断可以跳出工具的前两名。条件有两个：融合后的结论正好是 agent 选的类别；这一镜本身没有测到 24→30 这类重复帧规律。只有看图模型一个看图方时，规则不变。
-
-下表把缓存的特征和 agent 答案重新融合，按时长加权：
-
-| 集合 | 只用工具 | 只用 agent 复核 |
+| Dataset | Tools Only | Agent Review Only |
 |---|---|---|
-| 带货（2 条） | 46.4% | 98.6% |
-| 影视混剪（9 条） | 15.5% | 98.8% |
-| 口播（2 条） | 75.5% | 96.8% |
-| holdout（9） | 99.6% | 100% |
-| holdout2（7） | 99.8% | 99.8% |
-| 文章视频（13，盲测第二轮） | 88.6% | 100% |
+| Product demos (2) | 46.4% | 98.6% |
+| Film/TV mashups (9) | 15.5% | 98.8% |
+| Talking-head (2) | 75.5% | 96.8% |
+| `holdout` (9) | 99.6% | 100% |
+| `holdout2` (7) | 99.8% | 99.8% |
+| Article videos (13, blind round 2) | 88.6% | 100% |
 
-带货那条 AI 教程片里，相机俯拍真手机的画面在转码后被工具判成 3D 或代码渲染，agent 判实拍。按以前「必须是工具前两名」的规则，这一条只有 40%。
+## 7. Error Distribution by Resolution & Camera Motion (Tools Only)
 
-## 7. 误判分布：按分辨率、按运镜
+Aggregated across 9 datasets (excluding `film.yaml`, which is 15% tools-only because film clips require visual recognition):
 
-`rea-video eval` 的摘要里有 `by_resolution`（按画面短边分档）和 `by_camera`（按工具测得的运镜）两张表，每档给时长、准确率、错判镜头数和「真值→误判」秒数。下表汇总了除影视混剪以外的 9 组，只用工具判断，按时长加权。影视混剪组（`film.yaml`）只用工具时准确率为 15%：工具测不出「影视片段」这一类，要靠看图判断，所以这组单独看，不并进汇总。找不到视频文件的样本不计入。
-
-| 分辨率 | 时长 | 准确率 | 错判镜头 | 主要误判 |
+| Resolution | Duration | Accuracy | Misclassified Shots | Main Confusions |
 |---|---|---|---|---|
-| 1080p | 913s | 90.5% | 40/283 | 实拍→3D 21.5s；代码渲染→3D 18.0s；实拍→代码渲染 15.4s |
-| 720p | 607s | 97.6% | 3/145 | 代码渲染→静图推拉 6.0s；3D→静图推拉 6.0s |
+| 1080p | 913s | 90.5% | 40/283 | Live→3D 21.5s; Code→3D 18.0s; Live→Code 15.4s |
+| 720p | 607s | 97.6% | 3/145 | Code→Still motion 6.0s; 3D→Still motion 6.0s |
 | ≤480p | 94s | 100% | 0/15 | — |
 | >1080p | 16s | 100% | 0/1 | — |
 
-| 运镜 | 时长 | 准确率 | 错判镜头 | 主要误判 |
+| Camera Motion | Duration | Accuracy | Misclassified Shots | Main Confusions |
 |---|---|---|---|---|
-| 固定 | 727s | 91.6% | 26/184 | 实拍→3D 18.6s；实拍→代码渲染 15.4s；代码渲染→3D 15.2s |
-| 平滑运镜 | 550s | 98.0% | 8/142 | 3D→AI 视频 5.0s；实拍→AI 视频 3.8s |
-| 固定（主体在动） | 251s | 97.8% | 4/98 | 代码渲染→3D 5.1s |
-| 手持晃动 | 63s | 90.5% | 2/12 | 3D→AI 视频 5.4s |
-| 整图推拉/平移 | 38s | 53.1% | 3/7 | 3D→静图推拉 12.0s；代码渲染→静图推拉 6.0s |
+| Static | 727s | 91.6% | 26/184 | Live→3D 18.6s; Live→Code 15.4s; Code→3D 15.2s |
+| Smooth camera move | 550s | 98.0% | 8/142 | 3D→AI 5.0s; Live→AI 3.8s |
+| Static (moving subject) | 251s | 97.8% | 4/98 | Code→3D 5.1s |
+| Handheld shake | 63s | 90.5% | 2/12 | 3D→AI 5.4s |
+| Full-frame pan/zoom | 38s | 53.1% | 3/7 | 3D→Still motion 12.0s; Code→Still motion 6.0s |
 
-怎么读：
-- **固定机位是主要的错误来源**：画面几乎不动时，工具能用的只有纹理和噪声，转码后的手机实拍（带货组的俯拍手部、拍真实手机屏幕）容易被当成 3D 或代码渲染。带货组固定机位只有 41%，同组主体在动的镜头是 99%。
-- **整图推拉**样本少，但错法很集中：3D 和代码动画里的缓慢整体推镜会被当成静图推拉。
-- **分辨率和内容类型是绑在一起的**：1080p 这一档几乎都是抖音手机视频（带货、口播），720p 多是代码动效和 3D 样本，所以 1080p 偏低主要反映的是内容难度，不能说明分辨率本身导致误判。要单独看分辨率，需要把同一条视频转成几档分辨率再测。
+## 8. Full From-Scratch Re-Eval (Tools Only, No Feature Cache)
 
-## 8. 从头解码重测（只用工具）
-
-所有评测集都从头解码重测了一遍，不复用缓存特征，只用工具判断，按时长加权。前面几节的数字是各自规则改动当时测的，这里是同一版代码下的整体结果。有些样本的视频文件不在本地，不计入，缺的条数写在括号里，这几组只能当参考。
-
-| 集合 | 准确率 |
+| Dataset | Accuracy |
 |---|---|
-| `labels.yaml`（缺 11 条） | 100% |
-| `holdout.yaml`（缺 3 条） | 99.5%（一个 0.5 秒短镜头在 AI 视频和实拍之间摇摆，置信度 0.48；镜头的每一帧现在都读进来，它落到了实拍一边） |
-| `holdout2.yaml`（缺 4 条） | 100% |
-| `articles.yaml` 文章视频（转码） | 97.2% |
-| `daihuo.yaml` 带货 | 63.2% |
-| `koubo.yaml` 口播 | 93.3% |
-| `film.yaml` 影视混剪 | 15.8% |
+| `labels.yaml` (11 missing locally) | 100% |
+| `holdout.yaml` (3 missing) | 99.5% |
+| `holdout2.yaml` (4 missing) | 100% |
+| `articles.yaml` (transcoded) | 97.2% |
+| `daihuo.yaml` | 63.2% |
+| `koubo.yaml` | 93.3% |
+| `film.yaml` | 15.8% |
 | `code_videos.yaml` | 94.8% |
 | `code_videos_holdout.yaml` | 100% |
-| `particles.yaml`（3 条） | 66.7%（集合从 1 条扩到 3 条；新增的 bokeh 样本没认出，原有样本仍然判对） |
+| `particles.yaml` (3 clips) | 66.7% (bokeh sample missed) |
 
-和前面记录的只用工具的分数比，除了 holdout 那一个短镜头，没有一组下降：文章视频 88.6% → 97.2%，带货 46.4% → 63.2%，口播 75.5% → 93.3%，影视混剪 15% → 15.8%。带货和影视混剪只用工具仍然不够，要靠看图复核（第 5、6 节）。
+## Known Limitations
 
-## 已知局限
+1. Only 3 live-action eval clips (all 60fps Douyin phone footage); no real Ken Burns clips (tested on synthetic clips only).
+2. Dark/semi-transparent background photos and dark-theme webpage screenshots can be missed; product/logo overlays on live or AI shots require VLM.
+3. Deterministic layer cannot tell whether an embedded photo is real or AI-generated.
+4. Combined VLM + agent scores are re-fused from cached answers rather than freshly decoded features.
+5. Fine dark-background graphics (particles, point clouds, thin lines): works with soft background halos, but large out-of-focus bokeh orbs on dark backgrounds are not yet recognized.
+6. Music source: AI-generated instrumental BGM in regular videos cannot be distinguished from stock music by signal alone.
 
-1. 实拍样本只有 3 条（都是 60fps 抖音手机视频）；没有真实的 Ken Burns 样本，只在合成视频上测过。
-2. 暗色/半透明的背景照片、暗色主题网页截图漏检；实拍或 AI 画面上叠加的商品图和 Logo 不做确定性检测，依赖 VLM。
-3. 嵌入图片是真实照片还是 AI 图，确定性层判断不了。
-4. 加看图模型和 agent 复核的分数是把缓存的答案重新融合得到的，还没有在从头解码的特征上重测；只开看图模型、不做 agent 复核时在留出集上曾低于只用工具。
-5. 暗底细碎图形（粒子、点云、细线）：同一组阈值既在原画面上测，也在去掉平滑背景（画面尺度的柔光、暗角、渐变，不含物体本身的明暗）后的画面上测，所以背后有柔光也能认出；阈值来自开发集（`particles.yaml` 文件头有说明），halo 样本也是开发集。大颗失焦光斑漂在暗底上的（bokeh 样本）还认不出。星空、夜景灯光、暗色界面没有专门的样本，误判成代码渲染的可能没有排除。
-6. 音乐来源：普通视频里的 AI 生成 BGM 判断不出来（见上）；AI MV 样本只有 1 条。
-
-## 复现
-
-清单里的视频路径指向各自的来源目录（`${CAPSULE}` 是 capsule-cinema 仓库）；找不到时会用 `eval/media/<样本 id>.<扩展名>`。视频不随仓库分发，缺的样本会在评测输出的 `missing` 里列出，分数只覆盖找得到的那部分。
+## Reproduce
 
 ```bash
 export CAPSULE_CINEMA_ROOT=~/code/github/capsule-cinema
@@ -181,7 +160,7 @@ rea-video eval eval/labels.yaml   -o out/eval_main
 rea-video eval eval/holdout.yaml  -o out/eval_hold
 rea-video eval eval/holdout2.yaml -o out/eval_hold2
 rea-video eval eval/articles.yaml -o out/eval_articles
-rea-video eval eval/audio_mv.yaml -o out/eval_audio_mv --stems   # 只评音频（--stems 先分离人声再测唱/说）
-# 加 VLM：
+rea-video eval eval/audio_mv.yaml -o out/eval_audio_mv --stems
+# With VLM:
 rea-video --env-file $CAPSULE_CINEMA_ROOT/.env eval eval/labels.yaml -o out/eval_main_vlm --vlm
 ```

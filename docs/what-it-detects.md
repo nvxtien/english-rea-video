@@ -1,62 +1,62 @@
-# 能拆出什么
+# What It Detects
 
-## 画面是怎么做出来的
+## How Visuals Are Made
 
-每个镜头判成下面 11 类之一。「工具能测」表示离线、不看图也能判断；其余的要靠看图模型或 agent 看画面。
+Each shot is classified into one of the 11 categories below. "Tool-measured" means it can be detected offline without a vision model; the rest rely on a vision model or an agent inspecting frames.
 
-| 类别 | 常见例子 | 工具能测 | 评测视频数 |
+| Category | Common Examples | Tool-measured | Evaluated Videos |
 |---|---|---|---|
-| 实拍 | 口播、vlog、带货、探店 | ✓ | 5 |
-| AI 生成视频 | 文生 / 图生视频、AI 短剧 | ✓ | 24 |
-| 数字人 | 一张人像被声音驱动说话 | 部分 | 0 |
-| 3D 渲染 | Blender / C4D 科普、产品动画 | ✓ | 14 |
-| 2D 动画 | 手绘、Live2D、AE 角色动画 | ✗ 看图 | 0 |
-| 定格动画 | 黏土、毛毡、纸偶逐帧拍摄 | ✗ 看图 | 0 |
-| 影视片段 | 影视解说、混剪、名场面合集里剪进来的电影 / 电视剧 / 短剧画面 | ✗ 看图（工具只给线索） | 8 |
-| 代码 / 模板 | 文字动效、UI、图表、PPT 式卡片 | ✓ | 16 |
-| 录屏 / 截图 | 软件操作、网页 | ✓ | 11 |
-| 静图推拉 | 一张图做缩放平移 | ✓ | 3 |
-| 静帧 | 图片或卡片停住 | ✓ | 5 |
+| Live action | Talking-head, vlog, product demo, store visit | ✓ | 5 |
+| AI-generated video | Text/image-to-video, AI short drama | ✓ | 24 |
+| Avatar | A portrait driven by audio (lip-sync) | Partial | 0 |
+| 3D render | Blender / C4D explainers, product animation | ✓ | 14 |
+| 2D animation | Hand-drawn, Live2D, After Effects character animation | ✗ Visual | 0 |
+| Stop-motion | Clay, felt, paper puppets shot frame-by-frame | ✗ Visual | 0 |
+| Film / TV clips | Movie, TV drama, or short-drama clips cut into recaps or mashups | ✗ Visual (tools give clues) | 8 |
+| Code / template | Kinetic typography, UI demos, charts, slide-style cards | ✓ | 16 |
+| Screen recording / screenshot | Software tutorials, web demos | ✓ | 11 |
+| Ken Burns (still pan/zoom) | Zooming and panning across a single still image | ✓ | 3 |
+| Still frame | Static image or card held on screen | ✓ | 5 |
 
-同一个镜头上还会分开标出：
+Each shot also separates and labels:
 
-- 后期叠加：字幕、花字、标题、贴片、版式模板。物体上的字（包装、招牌）会尽量和字幕分开。具体见下面「剪辑包装层」。
-- 真实素材：画面里嵌入的录屏、截图、照片、视频片段，复刻时要用原文件；AI 画面里的产品、Logo、人物，列为复刻时的参考图。
-- 实拍上的 AI 加工（看图判断）：换脸、对口型、风格化重绘、AI 换装、抠像换背景、加删物体、美颜。复刻方案会写成「先拍，拍完再做哪步 AI 加工、用哪个模型」。
+- **Post-production overlays:** subtitles, styled captions, titles, stickers, layout templates. Text printed on physical objects (packaging, signs) is separated from subtitles whenever possible. See "Editing & Packaging Layer" below.
+- **Real source assets:** embedded screen recordings, screenshots, photos, or video clips that require original files when remaking; products, logos, and characters in AI shots are listed as reference images for remakes.
+- **AI post-processing on live footage (visual check):** face swap, lip-sync, stylized redraw, AI outfit change, background replacement, object add/remove, beauty filter. The remake plan specifies "film first, then apply which AI step and which model."
 
-## 实拍是怎么拍的
+## How Live Action Is Shot
 
-| 方面 | 拆出什么 |
+| Aspect | What Is Extracted |
 |---|---|
-| 取景 | 景别（远景到大特写）、机位高低、构图 |
-| 机位 | 手持 / 稳定器 / 三脚架、推拉摇移、手机还是相机、慢动作 / 延时 / 变速 |
-| 打光 | 主光从哪边、多高；光比；软光还是硬光；色温；背景虚化；轮廓光、眼神光、画面里能看到的灯 |
-| 布光方案 | 12 种，附器材清单：正面柔光、主光 + 补光、单侧硬光、逆光、夜景环境光、低调、高调、彩色氛围光（RGB / 霓虹）、产品静物、户外直射阳光、户外阴天、户外逆光 |
-| 调色 | 风格（自然、青橙、日系、胶片、黑白、暗调、高饱和）以及饱和度、对比、黑位、冷暖 |
-| 剪辑 | 节奏、跳切、推近切、插入画面的比例、是否卡节拍 |
-| 形式 | 口播、桌拍、手持带货、vlog |
+| Framing | Shot size (wide to extreme close-up), camera height, composition |
+| Camera | Handheld / gimbal / tripod, push/pull/pan/tilt, phone vs. camera, slow-mo / time-lapse / speed ramp |
+| Lighting | Key light direction & height, contrast ratio, soft vs. hard, color temperature, background bokeh, rim light, catchlight, visible practical lights |
+| Lighting setups | 12 presets with gear lists: front soft, key + fill, single-side hard, backlight, night ambient, low-key, high-key, colored ambient (RGB / neon), tabletop product still-life, outdoor direct sun, outdoor overcast, outdoor backlight |
+| Color grade | Style (natural, teal-orange, Japanese film, vintage film, B&W, moody dark, high saturation) plus saturation, contrast, black point, warmth |
+| Editing | Pacing, jump cuts, punch-in cuts, insert-shot ratio, whether cuts hit the beat |
+| Format | Talking-head, tabletop, handheld product demo, vlog |
 
-光比、软硬、色温、调色从像素测量；光源是什么、有没有轮廓光、是不是户外、拍摄速度，靠看图补充。两边的结果在报告里并排列出。
+Contrast ratio, softness, color temperature, and color grade are measured from pixels; light source type, rim light presence, outdoor/indoor, and frame-rate feel are supplemented by visual inspection. Both are shown side by side in the report.
 
-## 剪辑包装层
+## Editing & Packaging Layer
 
-整条视频按一条时间轴拆，不按镜头切开（一句字幕、一个贴纸常常跨切镜）。
+The entire video is analyzed along one continuous timeline rather than split by shot cuts (since a single subtitle or sticker often spans across cuts).
 
-| 项 | 怎么测 | 产出 |
+| Item | How It Is Measured | Output |
 |---|---|---|
-| 字幕时间轴 | 每秒 2 帧 OCR，同一位置的文字逐句跟踪，再用每秒 10 帧的灰度帧把起止对齐到约 0.1 秒；双行字幕合成一句 | `packaging/subtitles.srt` |
-| 文字样式 | 从像素量：字色、描边色和粗细、底框颜色、渐变、关键词另一种颜色（说到时变色也能看出）、字号、倾斜、粗细 | 报告里的样式列 |
-| 文字分类 | 字幕（同一位置连续换句）、花字（字大 / 彩色 / 倾斜 / 粗描边 / 多色 / 弹出，至少两条）、标题（顶部常驻）、文字标注（章节牌、跟着物体走的标签）、画面里的字 | 每条文字的类型 |
-| 入场 / 出场 | 直接出现、缩放弹出、淡入、滑入、逐字出现；句中有没有弹跳或变色 | 报告、ASS 里的动画 |
-| 贴纸 / 动图 / 画中画 | 在动的画面上不动、边界清楚的一块；切镜时周围全变它不变；镜头中途整块出现又消失（实拍上这条只标「疑似」）；里面在动且有固定周期就是循环 GIF | 时间、位置、截图（`packaging/sticker_XX.jpg`）。实测召回约一半，漏的靠看图补 |
-| 音效卡点 | 每个音效对齐到最近的画面事件（字幕 / 花字 / 贴纸出现、切镜，±0.2 秒）；没开 VLM 时，在花字和贴纸出现的时刻补找瞬态声作为低置信候选 | 音效表的「对应画面」列 |
+| Subtitle timeline | 2 fps OCR tracking text at the same screen region line by line, then refined against 10 fps grayscale frames to ~0.1s precision; two-line subtitles merged into one entry | `packaging/subtitles.srt` |
+| Text styling | Measured from pixels: fill color, stroke color & thickness, background box color, gradient, highlighted keyword color (including mid-sentence color shifts), font size, slant, weight | Style column in report |
+| Text classification | Subtitle (continuous lines in the same spot), styled caption (large / colored / slanted / thick stroke / multi-color / pop-in, matching ≥2 criteria), title (persistent top header), text callout (chapter cards, object-tracking labels), in-scene text | Type per text entry |
+| In / out animation | Cut-in, scale pop, fade, slide, word-by-word reveal; mid-line bounce or color shift | Animation notes in report & ASS |
+| Stickers / GIFs / PiP | Sharp-bounded static region over moving footage; stays fixed across a scene cut; pops in/out mid-shot (marked "suspected" on live footage); looping internal motion with fixed period indicates a looping GIF | Timestamp, position, crop (`packaging/sticker_XX.jpg`). ~50% tool recall; missed ones caught visually |
+| SFX beat sync | Each SFX aligned to the nearest visual event (subtitle / caption / sticker appear, or cut, ±0.2s); without VLM, transient audio spikes at caption/sticker timestamps are flagged as low-confidence candidates | "Synced visual" column in SFX table |
 
-另外导出 `packaging/overlays.ass`（带颜色、描边、位置、弹出动画，可以直接 `ffmpeg -vf ass=` 压制，字体要换成原片字体）和 `packaging/timeline.json`。
+Also exports `packaging/overlays.ass` (with color, outline, position, and pop-in animation—burnable directly via `ffmpeg -vf ass=` once matched with the original font) and `packaging/timeline.json`.
 
-字体是什么、贴纸贴的是什么内容，像素量不出来，靠 VLM 或 agent 看图补。3D、动画、版式画面里物体本来就会突然出现，这类镜头上只认跨切镜或循环播放的贴纸，其余的列为「画面内容」，需要的话看图确认。评测结果见 [eval/RESULTS.md](../eval/RESULTS.md)。
+Exact font names and sticker content cannot be measured from pixels alone and are filled in by VLM or agent visual review. In 3D, animation, or motion-template shots where objects naturally pop in, only cross-cut or looping overlays are marked as stickers; the rest are treated as scene content and verified visually if needed. See [eval/RESULTS.md](../eval/RESULTS.md) for benchmark results.
 
-## 声音
+## Audio
 
-- 人声：真人还是 AI 配音，口播文案。
-- 配乐：BPM、调性、段落，是 AI 生成还是曲库。
-- 音效：每个音效的时间点、类型，以及它卡在哪个画面事件上（字幕 / 花字 / 贴纸出现、切镜）。
+- **Voice:** Human vs. AI voiceover, plus full spoken transcript.
+- **Music:** BPM, key, sections, AI-generated vs. stock library music.
+- **Sound effects:** Timestamp, type, and the visual event each SFX lands on (subtitle / caption / sticker appear, or cut).
