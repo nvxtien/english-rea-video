@@ -1,20 +1,20 @@
-# 自己动手
+# Doing it yourself
 
-用户自己拍、自己剪，或在别的平台（即梦、可灵等网页）手动生成，按报告的拍摄方案和分镜表做，由你把素材拼回原时间线。
+The user shoots and edits it themselves, or generates it manually on another platform (Jimeng, Kling, etc. web apps), following the report's shooting plan and shot list — you cut the footage back into the original timeline.
 
-## 费用
+## Cost
 
-- rea-video 本身不收费。
-- 在别的平台手动生成，按那个平台收费；实拍的器材、场地自备。
+- rea-video itself is free.
+- Manual generation on another platform is billed by that platform; the user supplies their own gear and location for live-action shoots.
 
-## 用户要自己做时：帮他接上
+## When the user wants to do it themselves: hook them up
 
-1. 先给报告第二部分「照着做」的步骤（见 `remake.md`「照着做」）和要准备的素材清单（拍什么、每段多长、生成单元的提示词在哪）。
-2. 用户拍好或生成好以后，只要把文件路径发给你，剩下的你来：对应镜头、写 `mine.json`、跑 `rea-video remake`，把 `remake/compare.mp4` 给用户看，并按 `remake/status.md` 说还剩哪些镜头和声音要做。
+1. Give them report part two's "follow these steps" first (see `remake.md`'s "Follow these steps") along with the list of material to prepare (what to shoot, how long each segment, where the generation-unit prompts are).
+2. Once the user has shot or generated it, they just need to send you the file paths — you handle the rest: matching it to the right shot, writing `mine.json`, running `rea-video remake`, showing the user `remake/compare.mp4`, and telling them which shots and audio are still outstanding per `remake/status.md`.
 
-## 拼回原时间线
+## Cutting it back into the original timeline
 
-1. 按分镜表（`report.md` 的镜头号和时长）把素材对应到镜头。一条长素材覆盖多个镜头时，先用 ffmpeg 按动作切开；拿不准对应关系时给用户看截图确认。
-2. 写进 `out/ref/remake/mine.json`：`{"results": {"<镜头号>": {"video": "<素材绝对路径>"}, ...}}`。手动生成的「生成单元」视频覆盖多个镜头时，写成 `{"G2": {"unit": "G2", "shots": [4, 5, 6], "video": "<路径>", "trim_to": <单元秒数>}}`，`remake` 会按原片切点拆回各个镜头。
-3. `rea-video remake out/ref`：每段素材按动作对上原片这一镜的节奏塞进原镜头时长（动作起止、高点落在原片的时间上；最多快 3 倍、慢 1.25 倍，超出部分再裁；没什么动作的素材整段匀速变速），切点按原片帧号对齐、不会越拼越偏，没填的镜头暂时用原片占位，声音沿用原片；输出 `remake/remake.mp4`、左右对比的 `remake/compare.mp4` 和 `remake/status.md`。告诉用户哪些镜头还是原片占位、声音还要换。只想拼不想重画代码镜头时用 `rea-video assemble out/ref/breakdown.json <results.json 路径>`。
-   - 字幕叠回（`remake` 默认叠，`assemble` 要加 `--overlays`）：把测得的字幕 / 花字 / 标题按原样式叠到换掉的镜头上（原片占位的镜头本来就有字，不重复叠）。字体是通用无衬线体，颜色和底框是测量值，可能和原片有出入；贴纸只在 `assemble_log.json` 的 `stickers_to_add` 里列出来，要自己找素材贴。
+1. Match the footage to shots per the shot list (the shot numbers and durations in `report.md`). When one long piece of footage covers several shots, cut it by action with ffmpeg first; if you're not sure which part matches which shot, show the user a screenshot to confirm.
+2. Write it into `out/ref/remake/mine.json`: `{"results": {"<shot id>": {"video": "<absolute path to the footage>"}, ...}}`. When a manually generated "generation unit" video covers several shots, write it as `{"G2": {"unit": "G2", "shots": [4, 5, 6], "video": "<path>", "trim_to": <unit duration in seconds>}}` — `remake` splits it back into individual shots per the original cut points.
+3. `rea-video remake out/ref`: fits each piece of footage into its original shot's duration by matching its action to that shot's rhythm (the action's start/end and peak land on the original's timing; sped up by at most 3x, slowed by at most 1.25x, with anything beyond that trimmed; footage with little action is uniformly retimed across its whole span); cut points are aligned to the original's frame numbers so drift doesn't accumulate across the timeline; any shot not yet filled in stays as an original-footage placeholder, and audio carries over from the original. Produces `remake/remake.mp4`, a side-by-side `remake/compare.mp4`, and `remake/status.md`. Tell the user which shots are still original-footage placeholders and which audio still needs replacing. When you only want to assemble without redoing code shots, use `rea-video assemble out/ref/breakdown.json <path to results.json>`.
+   - Overlays are layered back on (`remake` does this by default; `assemble` needs `--overlays`): the measured subtitles/styled text/titles are layered onto the replaced shots in their original style (an original-footage-placeholder shot already has its own text, so it isn't layered twice). The font is a generic sans-serif, and color/background-box values are measurements — they may differ from the original. Stickers are only listed under `stickers_to_add` in `assemble_log.json` — you'll need to find and paste in that asset yourself.

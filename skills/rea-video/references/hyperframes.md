@@ -1,30 +1,30 @@
 # HyperFrames
 
-[HyperFrames](https://github.com/heygen-com/hyperframes) 是开源的 HTML 视频框架：AI 编程助手写 HTML / CSS 动画，渲染成 MP4。代码渲染、MG 动效、插画动画这类镜头本来就是这样做出来的，交给它重做成可改的工程，比 rea-video 自带的 `code-remake` 草稿更接近原片。
+[HyperFrames](https://github.com/heygen-com/hyperframes) is an open-source HTML video framework: an AI coding assistant writes HTML/CSS animation, which it renders to MP4. Code-render, motion-graphics, and illustrated-animation shots were made this way in the first place, so handing them to it to redo as an editable project gets closer to the original than rea-video's own `code-remake` draft.
 
-## 费用
+## Cost
 
-- 框架开源免费（Apache-2.0），本地渲染。
-- 它的 Studio 应用另有付费套餐（接入 HeyGen 的生成模型），只重做代码类镜头用不到。
+- The framework itself is free and open-source (Apache-2.0), rendered locally.
+- Its Studio app has a separate paid tier (hooks into HeyGen's generation models) — not needed just to redo code-type shots.
 
-## 怎么装
+## How to install it
 
-需要 Node.js 22 以上。Claude Code 里：
+Needs Node.js 22+. In Claude Code:
 
 ```bash
 claude plugin marketplace add heygen-com/hyperframes
 claude plugin install hyperframes@hyperframes
 ```
 
-其他编程助手（Codex、Cursor 等）运行一次 `npx hyperframes skills update`。装完以后按它的 skill 让助手写视频。
+For other coding assistants (Codex, Cursor, etc.), run `npx hyperframes skills update` once. After installing, follow its skill to have the assistant write the video.
 
-## 给它什么
+## What to give it
 
-把这些交给写 HyperFrames 工程的助手，说明「照这个节奏和画面重做，不要用原片像素」：
+Hand these to the assistant writing the HyperFrames project, telling it "redo this with the same timing and visuals, don't use the original's pixels":
 
-1. `video/rhythm.md`：每个切点和转场的时间、转场类型和时长、每镜关键帧（时间 + 是哪一种：动作开始 / 到位、转折、元素出入、构图变化……）。每个时间后面的 @数字 是原片帧号，按帧号排（HyperFrames 用同样的帧率），不要按四舍五入的秒数；动画的关键帧就按这里排，中间交给缓动。
-2. 每镜关键帧图 `shots/shot_XXX.jpg`，和报告「代码合成」一节：版式、配色（色值）、元素是什么、怎么入场。
-3. 声音：`stems/music.wav` 当配乐，或按 `video/sound.md` 的 BPM 和情绪换一首；音效时间点在 `video/sound.md`。
-4. 字幕和花字：`packaging/timeline.json`（时间、位置、样式）。
+1. `video/rhythm.md`: the time of every cut and transition, the transition type and duration, and each shot's keyframes (time + what kind it is: motion start/landing, a turn, an element entering/exiting, a composition change...). The `@number` after each timestamp is the original frame number — order by frame number (HyperFrames uses the same frame rate), not by a rounded-off second; lay out the animation's keyframes by this, and leave the in-between to easing.
+2. Each shot's keyframe sheet `shots/shot_XXX.jpg`, and the report's "code composite" section: layout, color scheme (color values), what each element is, and how it enters.
+3. Audio: use `stems/music.wav` as the soundtrack, or swap in a different track matching the BPM and mood in `video/sound.md`; sound-effect timestamps are in `video/sound.md`.
+4. Subtitles and styled text: `packaging/timeline.json` (time, position, style).
 
-只想重做其中几镜时，说清楚镜头号和时间范围；其余镜头可以原片占位，做好的片段写进 `remake/mine.json`，用 `rea-video remake out/ref` 拼回原时间线（见 `diy.md`）。
+If you only want to redo some of the shots, spell out the shot numbers and time range; the rest can stay as original-footage placeholders — write the finished segments into `remake/mine.json` and cut them back into the original timeline with `rea-video remake out/ref` (see `diy.md`).

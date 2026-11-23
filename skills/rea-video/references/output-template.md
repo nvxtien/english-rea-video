@@ -1,52 +1,52 @@
-# 交付给用户
+# Delivering to the user
 
-## 原则
+## Principles
 
-- 回复和报告一样分两块，不混在一起：
-  - **拆解**：一句话结论（这条视频是怎么做出来的），两三行内容和角色（讲什么、主要角色 / 场景 / 商品），分镜结构，剪辑包装，声音，真实素材，不确定点。逐镜写，不按生成方式合并镜头。
-  - **复刻方案**：按用户选的模型（报告第二部分，`rea-video plan` 出的）。用户还没选、又有 AI 镜头时，先问用哪个模型，不要替他选一个出方案。
-- 复刻方案先给「照着做」：报告第二部分开头（拆片包 `video/remake.md`「照着做」）已按视频类型排好步骤，原样转述，保持简短：每步一句，用户照着就能动手，测量数字留在报告小节里；类型判错时说明，按正确类型的顺序给。写明方案是按哪个模型的哪些能力排的（报告第二部分第一句）。
-- 有 AI 生成镜头时提醒一句：报告里的提示词是通用结构，生成前按这个模型的官方提示词指南或对应的提示词 skill 再改一遍。
-- 复刻方案按实际制作的组织方式写，不按剪辑镜头逐个写：
-  - AI 镜头 → **生成单元**：几个连续镜头一次生成、用哪个模型、参考素材（`@图片` 产品/人物、`@视频` 原片片段）、合并后的多镜头提示词、单元之间怎么衔接。默认引擎不支持一次多镜头时，照抄 `engine_note`，说明换模型能省几次调用。
-  - 实拍镜头 → **拍摄场次**：哪些镜头是同一场景、同一机位，一起拍；每个场景的布光；先大景别后特写。分镜表本身仍然逐镜写细。
-  - 有人在演的镜头 → 写清每镜的情绪和表演怎么还原（报告「表演与情绪」：表情、动作、语气，以及是首帧定表情、先配音再驱动、表演迁移还是演员照着演）。
-  - 代码渲染 → 几段代码合成，每镜写清画面元素和动效（报告「代码合成」一节的逐镜动效时间轴：元素位置、出现时间、方向、快慢、色值，元素截图在 `shots/`）；静图推拉 → 本地重建。
-- 提示词缺失（未开 VLM）时，你看图补写：`rea-video review` 的答案里每镜填 `replication.image_prompt / video_prompt / video_prompt_en`，`apply-review` 后生成单元会自动带上。
-- 报告文件路径（`report.html`）写给用户。有代码渲染镜头、用户要复刻时，告诉用户复刻要用整个报告目录（`shots/` 里的元素截图和关键帧条、`packaging/` 里的字幕文件），只给 HTML 或 PDF 会缺单张截图。不要把 breakdown.json 整段贴进对话。
+- Keep your reply split into the same two parts as the report — don't blend them:
+  - **The breakdown**: a one-line verdict (how this video was made), two or three lines on content and cast (what it's about, the main characters/scenes/products), the shot structure, editing/packaging, audio, real assets, and open questions. Write it shot by shot — don't merge shots by production method.
+  - **The remake plan**: organized around whichever model the user picked (this is part two of the report, produced by `rea-video plan`). If they haven't picked one yet and there are AI shots, ask which model first — don't pick one for them and produce a plan anyway.
+- Lead the remake plan with "follow these steps": part two of the report already opens with a step-by-step sequence organized by footage type (the breakdown package's `video/remake.md` "follow these steps") — relay it as-is, keep it short: one sentence per step the user can act on directly, leaving measurement numbers in the report's own section. If a shot's type was misjudged, say so and give the steps in the correct order for the right type. State which model and capabilities the plan is built around (the first line of report part two).
+- When there are AI-generated shots, add a reminder: the prompts in the report use a generic structure — before generating, revise them against that model's own official prompting guide or the matching prompting skill.
+- Organize the remake plan the way it would actually be produced, not shot-by-shot in editing order:
+  - AI shots → **generation units**: several consecutive shots generated in one call, which model, reference material (`@image` for product/person, `@video` for an original clip), the merged multi-shot prompt, and how units connect to each other. If the default engine doesn't support multiple shots per call, copy the `engine_note` verbatim, noting how many calls a different model would save.
+  - Live-action shots → **shoot blocks**: which shots share the same scene and camera position and should be shot together; the lighting plan for each scene; wide shots before close-ups. The shot list itself still gives detail shot by shot.
+  - Shots with someone performing → spell out how each shot's emotion and performance get reproduced (the report's "Performance & emotion": expression, action, tone, and whether it's first-frame-sets-the-expression, dub-first-then-drive, performance transfer, or an actor performing to match).
+  - Code-render → however many code-composite pieces, with each shot's visual elements and motion spelled out (the report's "code composite" section's per-shot motion timeline: element position, appearance time, direction, speed, color value, with element screenshots under `shots/`); still-image pans → rebuilt locally.
+- When a prompt is missing (no VLM was run), fill it in yourself by eye: in `rea-video review`'s answers, fill `replication.image_prompt / video_prompt / video_prompt_en` per shot — `apply-review` then carries these into the generation units automatically.
+- Give the user the report file path (`report.html`). When there are code-render shots and the user wants to remake it, tell them the remake needs the whole report directory (the element screenshots and keyframe strips under `shots/`, the subtitle files under `packaging/`) — handing over only the HTML or PDF will be missing individual screenshots. Don't paste the whole of `breakdown.json` into the chat.
 
-## 语言
+## Language
 
-报告语言跟 `--lang` 走（zh / en），回复语言跟用户走；两者的判断顺序见 SKILL.md「交付给用户」。下面的模板是中文版，英文回复用同样的结构：one-line verdict → content and cast → remake plan → shot list → packaging → audio → material you must supply → open questions → report path。
+The report's language follows `--lang` (zh / en); your reply's language follows the user — see SKILL.md's "Delivering to the user" for how each is decided. The template below is in English; use the same structure regardless of language: one-line verdict → content and cast → remake plan → shot list → packaging → audio → material you must supply → open questions → report path.
 
-## 回复模板（中文）
+## Reply template
 
-**一句话结论**：混合制作——底层画面 AI 生成视频 62%、代码模板 30%、实拍 8%；全片字幕由代码叠加；引入了 2 段真实截图；女声 TTS + 110 BPM 流行 BGM，切镜卡在节拍上。
+**One-line verdict**: Mixed production — underlying footage is 62% AI-generated video, 30% code template, 8% live action; subtitles throughout are composited in code; 2 real screenshots are embedded; a female TTS voice over 110 BPM pop BGM, with cuts landing on the beat.
 
-**内容与角色**：剧情短片，4 镜；主角 A「小黄」（黄色卡通小河马，粉色连体衣、斜挎粉包，全片出场）、B 男友（同款配色，#3–#4）；场景 S1 白天城市街道。复刻时 A、B 各固定一张参考图贯穿所有生成单元。
+**Content & cast**: A narrative short, 4 shots; lead character A, "Xiao Huang" (a yellow cartoon hippo, pink onesie, pink crossbody bag, appears throughout), B the boyfriend (matching color scheme, #3–#4); scene S1 a city street in daytime. For the remake, pin one reference image each for A and B and carry it across all generation units.
 
-**分镜表**
+**Shot list**
 
-| # | 时间 | 画面里看得到的 | 叠加层 | 制作方式（推断，置信度） | 推断依据 | 素材来源 | 复刻路线 |
+| # | Time | Visible in frame | Overlays | Production method (inferred, confidence) | Basis for the inference | Asset source | Remake route |
 |---|---|---|---|---|---|---|---|
-| 1 | 0:00–0:02.5 | 小黄在街边挥手；左手手指形变 | 字幕、标题 | AI 视频（86%） | 24→30 重复帧 | AI 生成 | capsule-cinema 首尾帧 |
+| 1 | 0:00–0:02.5 | Xiao Huang waving by the street; left-hand fingers deformed | Subtitle, title | AI video (86%) | 24→30 duplicate frames | AI-generated | capsule-cinema first/last-frame |
 
-「画面里看得到的」只写对着截图能核实的东西（内容、运镜、破绽）；帧率、噪声、元数据这类工具测量写进「推断依据」，制作方式标明是推断。两者对不上时写出来。
+"Visible in frame" only lists what you can verify against a screenshot (content, camera move, tells); tool measurements like frame rate, noise, and metadata go under "basis for the inference," and the production method is marked as inferred. Write it out when the two disagree.
 
-**拍法、打光与剪辑**（有实拍镜头时写，对应 `rea-video summary` 末尾的取景 / 机位 / 打光 / 剪辑 / 形式几行）：视频形式（口播/桌拍/vlog）、景别和机位角度、手持还是支架、机位/场景数；布光方案（主光方向和高度、光比、软硬、色温、有无补光/轮廓光、画面里的光源）；剪辑手法（跳切剪气口、推近切、插入截图/录屏的比例）；给一份复刻器材清单。测量值和你看图的结论冲突时写明依据。
+**Shooting, lighting & editing** (write this when there are live-action shots, matching the framing / camera position / lighting / editing / format lines at the end of `rea-video summary`): video format (talking-head/tabletop/vlog), shot size and camera angle, handheld vs. tripod, number of camera positions/scenes; lighting setup (key light direction and height, lighting ratio, hardness, color temperature, any fill/rim light, visible light sources in frame); editing technique (jump cuts on breaths, push-in cuts, the proportion of inserted screenshots/recordings); give a gear list for the remake. State your basis when the measurement conflicts with what you see by eye.
 
-**剪辑包装**：字幕（几句、位置、颜色 / 描边 / 底框、关键词高亮、入场方式，SRT/ASS 文件路径）；花字、标题、章节牌、跟随标签（时间、文字、样式、动画）；贴纸 / GIF / 表情包 / 画中画（时间、位置、贴的是什么、是否循环）；哪些音效卡在文字弹出或贴纸出现上；花字 / 贴纸跟哪句台词（「按台词定位」）、哪些是常驻图层。工具没测到、你看图补的写明。
+**Editing/packaging**: subtitles (how many lines, position, color/outline/background box, keyword highlighting, entrance style, SRT/ASS file paths); styled text, titles, chapter cards, tracking labels (time, text, style, animation); stickers/GIFs/emoji/picture-in-picture (time, position, what it is, whether it loops); which sound effects land on a text pop-in or sticker appearance; which styled text/sticker is anchored to which line of dialogue ("anchored to dialogue"), and which are persistent layers. Note anything the tool missed that you found by eye.
 
-**声音**：人声（TTS 还是真人、音色，台词见报告脚本表）/ BGM（歌名猜测、风格、BPM、调性、来源与版权风险、段落）/ 音效（时间点 → 对应画面事件）/ 混音（是否压低音乐）。报告「声音」一节每一项是一张卡，照着抄即可。
+**Audio**: voice (TTS or real, timbre — dialogue is in the report's script table) / BGM (song-title guess, style, BPM, key, source and licensing risk, sections) / sound effects (timestamp → matching on-screen event) / mix (is the music ducked). Each item in the report's "Audio" section is its own card — copy it over as-is.
 
-**需要你提供的真实素材**：镜头 #4 中部的 GitHub 页面截图……
+**Real assets you need to supply**: the GitHub page screenshot in the middle of shot #4...
 
-**复刻方案**：按 `production_plan` 写。AI 镜头写生成单元（镜头范围、模型、参考素材、多镜头提示词、衔接）；实拍镜头写拍摄场次（场景 → 机位 → 镜头，布光）；代码渲染写几段代码合成、每段用什么做法，并指向逐镜动效时间轴和元素截图；静图推拉一句。涉及付费的操作先确认。
+**Remake plan**: write it from `production_plan`. AI shots as generation units (shot range, model, reference material, multi-shot prompt, how they connect); live-action shots as shoot blocks (scene → camera position → shots, lighting); code-render as however many code-composite pieces, what approach each uses, pointing to the per-shot motion timeline and element screenshots; still-image pans get one line. Confirm with the user before anything that costs money.
 
-> 例：AI 画面 8 镜 → 3 个生成单元、3 次 Seedance 2.5 调用（默认的 Seedance 2.0 不支持一次多镜头，逐镜要 8 次）。G1 #1–#5（9.0s）：@图片1 产品图 + @视频1 原片 0–9s，一次出 5 个镜头……
+> Example: 8 AI shots → 3 generation units, 3 Seedance 2.5 calls (the default Seedance 2.0 doesn't support multiple shots per call, which would take 8 calls shot-by-shot). G1 #1–#5 (9.0s): @image1 product photo + @video1 original 0–9s, produces 5 shots in one call...
 
-**不确定的地方**：#7 实拍还是 AI 待确认（倾向 AI 64%）：没有手部和文字可供判断，建议……
+**Open questions**: #7 live action or AI unconfirmed (leaning AI 64%): no hands or text to judge by — suggest...
 
-**报告**：out/ref/report.html
+**Report**: out/ref/report.html
 
-**VLM**：照抄 `rea-video summary` 的 `VLM:` 一行（已生效 / 部分生效 / 全部调用失败 / 未配置 / 未开）。没生效、而且你自己也看不了图时，加一句建议："配置任意多模态模型（REA_VLM_BASE_URL / REA_VLM_API_KEY / REA_VLM_MODEL）后加 --vlm 重跑，实拍/AI/3D 的判断会更准。"你能看图时写"由 agent 看图复核"即可。
+**VLM**: copy the `VLM:` line from `rea-video summary` verbatim (active / partially active / all calls failed / not configured / off). If it's not active and you can't see images either, add one line of advice: "Configure any multimodal model (REA_VLM_BASE_URL / REA_VLM_API_KEY / REA_VLM_MODEL) and rerun with --vlm — it will sharpen the live-action/AI/3D calls." If you can see images yourself, just write "reviewed visually by the agent."

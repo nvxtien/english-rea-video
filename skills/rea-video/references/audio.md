@@ -1,108 +1,108 @@
-# 声音拆解
+# Audio breakdown
 
-工具产出：`breakdown.json` 的 `audio`（测量值）和 `audio_plan`（与 VLM 合并后的结果和复刻方案），以及 `audio.png` 时间轴。
+Tool output: `audio` (measured values) and `audio_plan` (the result after merging with the VLM, plus a remake plan) in `breakdown.json`, and the `audio.png` timeline.
 
-## 能信多少
+## How much to trust
 
-| 项 | 方法 | 可靠度（capsule-cinema 样本） |
+| Item | Method | Reliability (capsule-cinema samples) |
 |---|---|---|
-| 有无人声 | 人声频段的音节调制（3–8Hz），加上句间停顿 | 高 |
-| 有无 BGM | 人声间隙里仍有响亮、有音调的声音（谐波占比 >0.62）；没有人声时看谐波持续性；或者有明显节拍周期。整段只有一个音高（测试音、蜂鸣、带谐波的电流嗡声，底下有点底噪也一样）不算音乐，记为 `steady_tone` | 高 |
-| BPM | 打击成分起音包络的自相关，同时给出半速/倍速候选；持续音、长音铺底这类几乎没有打击成分的声音报「无明显节拍」，不给 BPM；打击成分很少、周期也很弱的（没有鼓的铺底）同样不给 | 高（咸鸭蛋 110.0 vs 真值 110.15） |
-| 调性 | 色度 + Krumhansl 调性轮廓 | 中高（两条真值都对：D major） |
-| 段落变化 | 色度和响度的新颖度峰值 | 中 |
-| 音效 | 人声段落之外非常突出的瞬态，且不在节拍上；有 BGM 时要求更突出；瞬态处要有真实的打击能量（持续音的压缩噪声不算），音轨最后 0.1 秒的截断声不算 | **低**：在人声 + BGM 的混音里，信号层面实测精度只有约 0.2，轻音效基本测不出。音效清单以 VLM 为准 |
-| TTS 还是真人 | 交给 VLM | — |
-| 男声 / 女声 | 基频中位数（<150Hz 偏男声，>200Hz 偏女声） | 中，只作参考 |
-| 卡点剪辑 | 切点落在节拍上的比例 vs 随机概率 | 中高 |
+| Voice present | Syllable modulation in the voice band (3–8Hz), plus pauses between sentences | High |
+| BGM present | A loud, tonal sound still present in the gaps between voice (harmonic ratio >0.62); when there's no voice, look at harmonic persistence; or a clear beat period. A single sustained pitch for the whole clip (test tone, beep, a harmonic electrical hum, even with a bit of noise floor underneath) doesn't count as music — logged as `steady_tone` | High |
+| BPM | Autocorrelation of the onset envelope of percussive content, with half-time/double-time candidates given too; a sustained tone or a long drone with almost no percussive content is reported as "no clear beat" with no BPM given; something with very little percussive content and a weak period (no drum bed) also gets no BPM | High (salted-egg sample: 110.0 vs. ground truth 110.15) |
+| Key | Chroma + Krumhansl key profile | Medium-high (both ground-truth samples correct: D major) |
+| Section changes | Novelty peaks in chroma and loudness | Medium |
+| Sound effects | Very prominent transients outside the voice segments and not on the beat; a higher bar when there's BGM; a transient needs real percussive energy (compressed noise in a sustained tone doesn't count, nor does the cutoff click at the last 0.1s of the track) | **Low**: in a voice + BGM mix, measured precision at the signal level is only about 0.2 — faint sound effects are essentially undetectable this way. Trust the VLM's list over this |
+| TTS vs. real person | Left to the VLM | — |
+| Male / female voice | Median fundamental frequency (<150Hz leans male, >200Hz leans female) | Medium, reference only |
+| Beat-synced editing | Ratio of cuts landing on the beat vs. random chance | Medium-high |
 
-## 剥离音轨
+## Stem separation
 
-`decompose` 默认把声音剥成三条轨，放在 `stems/` 下（`rea-video stems <视频>` 可以只做这一步）：
+`decompose` splits audio into three stems by default, under `stems/` (`rea-video stems <video>` does only this step):
 
-| 文件 | 内容 |
+| File | Content |
 |---|---|
-| `original.wav` | 原声（视频里的完整混音） |
-| `vocals.wav` | 人声干声：旁白、口播、歌声。注意：键盘声、"叮"之类的瞬态音效也会落在这里 |
-| `music.wav` | 配乐 + 环境声 |
-| `voice_S1.wav`、`voice_S2.wav` … | 有两个以上说话人时，每人一条：人声干声里只留这个人说话的段落，长度和原片一致 |
+| `original.wav` | Original audio (the full mix from the video) |
+| `vocals.wav` | Isolated voice: narration, talking-head speech, singing. Note: keyboard clicks and "ding"-type transient sound effects also end up here |
+| `music.wav` | Music + ambient sound |
+| `voice_S1.wav`, `voice_S2.wav` … | When there are two or more speakers, one per person: the isolated-voice track keeps only that person's segments, same length as the original |
 
-模型是 UVR MDX-Net Inst HQ 3（ONNX，CPU 即可，首次运行从 GitHub 下载约 67 MB，缓存在 `~/.cache/rea-video/models`，可用 `REA_VIDEO_MODELS` 改位置）。实测 TTS + Suno BGM 混音分离 SDR 约 19.7 dB；纯 BGM 漏进人声轨 −42 dB。约 0.6 倍实时（4 核）。
+The model is UVR MDX-Net Inst HQ 3 (ONNX, CPU is fine; it downloads ~67 MB from GitHub the first time it runs, cached at `~/.cache/rea-video/models`, override the location with `REA_VIDEO_MODELS`). Measured SDR for TTS + Suno BGM mix separation is about 19.7 dB; pure-BGM leakage into the voice track is −42 dB. Runs at about 0.6x real time (4 cores).
 
-复核时**直接听 vocals.wav 和 music.wav**，比听混音容易判断：人声是唱还是说、是不是 TTS，配乐有没有人声、结尾是不是被截断。
+When reviewing, **listen to `vocals.wav` and `music.wav` directly** — it's easier to judge than listening to the mix: whether the voice is sung or spoken, whether it's TTS, whether the music has voice in it, whether the ending is cut off.
 
-### 说话人
+### Speakers
 
-装了 `rea-video[asr]` 时，`decompose` 在人声干声上分出谁在什么时候说话，结果在 `breakdown.json` 的 `speakers`：
+With `rea-video[asr]` installed, `decompose` identifies who's speaking when on the isolated-voice track; the result is in `breakdown.json`'s `speakers`:
 
-- `speakers`：每个声音（`S1`、`S2`…，按出场顺序）的秒数、占比、基频和男 / 女声提示；只出现几秒的标 `minor`。
-- `turns`：每一段的起止时间和说话人；`overlaps`：两人同时说话的时间段。
-- 台词 `speech.lines` 每句带 `speaker`；开了 VLM 时角色名按时间对到声音上（`name`）。
+- `speakers`: for each voice (`S1`, `S2`... in order of first appearance), its duration, share, fundamental frequency, and a male/female hint; one that only appears for a few seconds is marked `minor`.
+- `turns`: the start/end time and speaker for each segment; `overlaps`: time ranges where two people talk at once.
+- Each line in `speech.lines` carries a `speaker`; with VLM on, character names are mapped onto voices by time (`name`).
 
-音色很像的两个人可能被并成一个，同一个人换语气可能被拆成两个：人数要紧时听每个人的音轨确认。`--no-speakers` 可跳过。
+Two people with very similar timbres can get merged into one; one person changing tone can get split into two — when the speaker count matters, listen to each person's track to confirm. Skip this with `--no-speakers`.
 
-## 来源判断：AI 生成还是现成的？
+## Source: AI-generated or stock?
 
-**一句话结论**在 `sound_sources.summary_zh`，格式是"视频类型 → 人声 / 音乐 / 音效来源"：
+**The one-line verdict** is in `sound_sources.summary_zh`, formatted as "video type → voice / music / SFX source":
 
-| 视频类型 | 人声 | 音乐 | 音效 |
+| Video type | Voice | Music | Sound effects |
 |---|---|---|---|
-| 音乐 MV / 歌曲类 | 歌曲自带的演唱 | **AI 生成**（Suno 等）为主 | 音效库 |
-| AI 视频原生出声 | 视频模型生成 | 后期配乐 | 视频模型生成 |
-| 实拍 | 同期声 / 真人配音 | 现成配乐 | 同期声 |
-| 旁白/口播 + 配乐 | TTS 或真人配音 | **现成曲库**为主（AI 工作流也常用 Suno 垫乐） | 音效库 |
-| 纯配乐 | — | 现成曲库 | 音效库 |
+| Music MV / song-driven | The singing that comes with the song | Mostly **AI-generated** (Suno, etc.) | Sound-effect library |
+| AI video with native audio | Generated by the video model | Added in post | Generated by the video model |
+| Live action | Sync sound / real dubbing | Stock music | Sync sound |
+| Narration/talking-head + music | TTS or real dubbing | Mostly **stock music library** (AI workflows also often use Suno for background music) | Sound-effect library |
+| Pure instrumental background | — | Stock music library | Sound-effect library |
 
-工具产出：`breakdown.json` 的 `sound_sources`（music / voice / sfx 各自的 `source`、`leaning`、`probs`、`evidence`、`how_to_confirm`）。
+Tool output: `breakdown.json`'s `sound_sources` (each of music / voice / sfx has its own `source`, `leaning`, `probs`, `evidence`, `how_to_confirm`).
 
-### 第一步：先看视频形式（决定先验）
+### Step 1: look at the video's format first (sets the prior)
 
-| 形式 | 怎么认 | 音乐来源先验 |
+| Format | How to recognize it | Music-source prior |
 |---|---|---|
-| **AI 音乐 MV**（整片就是一首带人声的歌） | VLM 说 format=MV；或确定性层：音乐铺满全片（>85%）**且人声是唱的**（`voice.style` = singing / rap_or_rhythmic，在分离出的干声上测） | AI 生成 60%（未开 VLM 时降权为 45%） |
-| **普通视频配乐**（旁白/口播 + 垫底 BGM，或无人声的纯配乐） | 人声是说话（`voice.style` = speech），或没有人声 | 现成曲库 60% |
+| **AI music MV** (the whole video is one sung song) | The VLM says format=MV; or at the deterministic layer: music fills the whole video (>85%) **and the voice is sung** (`voice.style` = singing / rap_or_rhythmic, measured on the isolated voice track) | AI-generated 60% (downweighted to 45% without a VLM) |
+| **Ordinary video soundtrack** (narration/talking-head + background BGM, or pure instrumental with no voice) | The voice is speech (`voice.style` = speech), or there's no voice at all | Stock music library 60% |
 
-"唱"和"说"在**人声干声**上判断，两个信号：
+"Sung" vs. "spoken" is judged on the **isolated voice track**, with two signals:
 
-- 持续音高（`sustained_note_ratio`）：唱歌会在一个音高上停留 ≥160ms，>0.3 算唱。实测 TTS 旁白 0.14–0.15，说唱 0.24（说唱本来就不拖长音）。
-- 副歌重复（`chorus_repeat_share`）：4 秒的人声旋律片段在 6 秒以后又出现。>0.1 算歌（包括说唱）。实测 AI 说唱 MV 0.26，TTS 旁白 0.00。短视频只截了一段、没有重复的副歌时，这个信号会失效。
+- Sustained pitch (`sustained_note_ratio`): singing holds a pitch for ≥160ms; >0.3 counts as singing. Measured: TTS narration 0.14–0.15, rap 0.24 (rap doesn't hold long notes by nature).
+- Chorus repetition (`chorus_repeat_share`): a 4-second vocal melody fragment recurs after 6 seconds. >0.1 counts as a song (rap included). Measured: AI rap MV 0.26, TTS narration 0.00. This signal doesn't work for a short clip that only captures one segment with no repeated chorus.
 
-### 第二步：用证据修正
+### Step 2: correct with evidence
 
-| 证据 | 指向 | 权重 |
+| Evidence | Points to | Weight |
 |---|---|---|
-| 歌词唱的就是本片的角色/商品/剧情（VLM `lyrics_match_content`） | AI 生成（定制歌） | 强 |
-| VLM 认出歌名（`song_guess`） | 知名歌曲 | 强 |
-| 平台音乐标签是具体歌名（`--meta`） | 现成曲目 | 强 |
-| 平台标签是「@作者创作的原声」 | 不是平台曲库；MV 类多为 AI 歌 | 中 |
-| 片尾音乐满音量被硬切 | 截取的现成曲目 | 弱 |
-| 音乐和视频一起收尾 | 按片长定制/剪辑（两种都可能） | 很弱 |
-| 文件带 AIGC 隐式标识 | 整片声明含 AI 内容 | 很弱 |
+| The lyrics are literally about this video's character/product/story (VLM `lyrics_match_content`) | AI-generated (custom song) | Strong |
+| The VLM recognizes the song title (`song_guess`) | A well-known song | Strong |
+| The platform's music tag names a specific song | A stock track | Strong |
+| The platform tag says "original sound created by @author" | Not from the platform's music library; MV-type videos are mostly AI songs | Medium |
+| The ending music is hard-cut at full volume | A clipped stock track | Weak |
+| The music and video end together | Custom-fitted or edited to length (either is possible) | Very weak |
+| The file carries an implicit AIGC marker | The whole video is declared to contain AI content | Very weak |
 
-最高概率 <45% 时输出"待确认"，同时给出倾向（`leaning`）。
+When the highest probability is <45%, output "unconfirmed" along with a `leaning`.
 
-### 已知陷阱（一定要在回复里提醒）
+### Known pitfall (always flag this in your reply)
 
-**AI 工作流做出来的普通视频，BGM 也常是 Suno 生成的**（capsule-cinema 自己的 monkey_wine、咸鸭蛋、鸟窝都是）。"普通配乐 = 曲库"的先验在这类视频上会错，而纯听感/信号特征分不开 Suno 器乐和曲库器乐。所以普通配乐的结论必须写成"倾向曲库，待确认"，并给出确认方法：
+**Even an ordinary video made with an AI workflow often has Suno-generated BGM** (capsule-cinema's own monkey_wine, salted-egg, and bird's-nest samples all do). The "ordinary soundtrack = stock library" prior is wrong for these, and listening alone — or signal features — can't tell Suno's instrumentals apart from stock-library instrumentals. So any verdict of "ordinary soundtrack" must be written as "leaning stock library, unconfirmed," with a way to confirm it:
 
-1. 抖音/小红书原页面的音乐标签（`--meta` 传进来最好）。
-2. 汽水音乐 / QQ 音乐「听歌识曲」或 ACRCloud：识别得到就是现成歌曲；识别不到不代表是 AI（曲库冷门曲也常识别不到）。
-3. 听感：AI 歌咬字含糊、高频发虚带金属感、歌词紧扣画面；AI 器乐常见结构一成不变、结尾突然收住或循环拼接。
+1. The music tag on the original Douyin/Xiaohongshu page (best passed in via `--meta`).
+2. "Shazam"-style song recognition in NetEase/QQ Music, or ACRCloud: a match means it's a stock track; no match doesn't mean it's AI (obscure library tracks often don't match either).
+3. By ear: AI-sung vocals tend to slur, have a thin, metallic top end, and lyrics that track the footage too closely; AI instrumentals often have a static structure that never varies, and either cut off abruptly or loop-splice at the end.
 
-### 人声和音效的来源
+### Source of voice and sound effects
 
-- **人声**：TTS / AI 视频自带人声 / 真人录音。镜头切换处底噪跳变（`per_clip_audio.resets_at_cuts`）说明每段声音跟着画面片段走，是 AI 视频模型原生出声（如 Veo、Seedance 带音频）或实拍同期声。
-- **音效**：多数来自现成音效库（mixkit、爱给等）；AI 视频模型原生出声时音效也跟着片段走。确定性层只能给倾向，清单以 VLM 为准。
+- **Voice**: TTS / native audio from an AI video / real recording. A jump in background noise at each cut (`per_clip_audio.resets_at_cuts`) means the audio follows the footage clip-by-clip — either native audio from an AI video model (e.g. Veo, Seedance with audio) or live-action sync sound.
+- **Sound effects**: mostly from stock SFX libraries (Mixkit, aigei, etc.); when the AI video model generates native audio, effects follow the clip too. The deterministic layer can only give a leaning — trust the VLM's list.
 
-## 复核方法
+## How to review
 
-1. 看 `audio.png`：人声条、音乐条和切镜线是否对得上直觉。
-2. 音效有疑问时，抽那一段画面看看有没有对应事件（文字弹出、转场、动作）：`rea-video tiles`。
-3. VLM 给出 `source_guess=popular_song`，或平台标签是具体歌名时，在复刻方案里写明"需要授权或替换"。
-4. 音乐来源按上面的"来源判断"写，普通配乐不要写成确定的"曲库"。
+1. Look at `audio.png`: do the voice bar, music bar, and cut lines line up with your intuition.
+2. When a sound effect is in doubt, pull that segment and check for a matching on-screen event (text pop-in, transition, action): `rea-video tiles`.
+3. If the VLM gives `source_guess=popular_song`, or the platform tag names a specific song, note in the remake plan that "licensing or replacement needed."
+4. Write the music source per the "source" section above — don't state an ordinary soundtrack as a definite "stock library."
 
-## 复刻
+## Remaking
 
-- **人声**：capsule-cinema 的 DoubaoTTSTool / UniversalTTSTool 或 MiniMax 克隆；要卡原时间窗时用时长可控 TTS。
-- **BGM**：按 BPM、调性、情绪用 Suno（UniversalMusicGenerationTool）或曲库；在段落变化点对齐镜头。
-- **音效**：按时间点摆放；有音高的音效对齐 BGM 调性（capsule-cinema plush 配方的 sfx.py / cues.py 就是这样做的）。
+- **Voice**: capsule-cinema's DoubaoTTSTool / UniversalTTSTool, or MiniMax cloning; use duration-controlled TTS when it has to fit the original time window.
+- **BGM**: generate with Suno (UniversalMusicGenerationTool) matching BPM, key, and mood, or use a stock library; align cuts to section changes.
+- **Sound effects**: place by timestamp; align any pitched sound effect to the BGM's key (this is how capsule-cinema's plush-toy recipe's sfx.py / cues.py do it).

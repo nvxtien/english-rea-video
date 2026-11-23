@@ -1,42 +1,42 @@
-# 看图复核规则
+# Visual-review rules
 
-SKILL.md 第 1 节流程的补充：看图结果怎么和工具融合，以及几类容易判错的情况。
+Supplement to the SKILL.md section 1 workflow: how a visual-review result gets fused with the tool, and a few situations that commonly get misjudged.
 
-## 融合规则
+## Fusion rules
 
-实测得来（仓库 `eval/RESULTS.md`）：
+From measurement (repo `eval/RESULTS.md`):
 
-- 只有一个看图来源（只有 VLM 或只有你）时，看图结果只能在工具前两名候选里选。工具对"AI / 实拍 / 数字人"有把握时不改；转码后带 24→30 重复帧的镜头不会仅凭"看起来真"改成实拍。镜头自身没有重复帧（原生 30fps 节奏）时，你的实拍判断会被采纳，哪怕整片因为混了 AI 开场而没被标成原生 30fps；工具前三名都不到 0.4、且你选的类别只比次选差一点时，也以你为准。看图结果在 3D / 代码动效 / 录屏之间的区分最有用。2D 动画、定格动画、影视片段是例外：工具测不出这三类，你判成它们时直接采纳，但只有一方看图时结论保留「待确认」。
-- VLM 和你都答了：先判大类（生成 / 渲染 / 实拍 / 录屏 / 静图），再判细类。工具首选只要有你们其中一方支持（同细类或同大类，比如工具判 AI 视频、你判数字人），就按工具首选的大类；你们两个一致反对工具时，按正常融合。
-- 标了「有分歧」的镜头（工具和 VLM 对是不是实拍意见相反）必看：核对 VLM 写的证据在截图里是否真的看得见，VLM 会编理由。
-- review_tasks.json 里写着"用户过去 n 次把工具判的 X 改成 Y"的镜头，是用户反复纠正过的类型，要重点看。
+- When there's only one visual-review source (VLM only, or you only): a visual-review result can only be chosen from the tool's top two candidates. When the tool is confident about "AI / live action / digital avatar," don't override it; a transcoded shot with 24→30 duplicate frames won't be changed to live action just because it "looks real." If the shot itself has no duplicate frames (native 30fps rhythm), your live-action call is adopted even if the whole video wasn't flagged as native 30fps because of an AI-generated intro mixed in; when the tool's top three candidates are all below 0.4 and the category you picked is only slightly behind the runner-up, your call wins too. Visual review is most useful for distinguishing between 3D / code-driven motion graphics / screen recording. 2D animation, stop motion, and film footage are exceptions: the tool can't detect these three at all, so when you call one of them it's adopted directly — but if only one side has looked, the verdict stays "unconfirmed."
+- When both the VLM and you have answered: decide the broad category first (generated / rendered / live action / screen recording / still image), then the fine-grained one. If the tool's top choice is backed by either of you (same fine category, or same broad category — e.g. the tool says AI video, you say digital avatar), go with the tool's top choice at the broad-category level; when you two agree against the tool, fuse normally.
+- Always look at shots flagged "disagreement" (the tool and the VLM disagree on whether it's live action): check whether the evidence the VLM cites is actually visible in the screenshot — the VLM does fabricate reasons.
+- A shot where `review_tasks.json` notes "the user has corrected the tool's X to Y n times before" is a type the user has repeatedly corrected — look at it closely.
 
-## 看不了图时的规则（重要）
+## Rules when you can't see images (important)
 
-先确认你自己能不能看图（能不能读 `storyboard.jpg`、`shots/*.jpg` 并描述画面内容）。**看不了图、又没开 VLM 时：**
+First confirm whether you can actually see images at all (can you read `storyboard.jpg`, `shots/*.jpg` and describe what's in them). **If you can't see images and there's no VLM configured:**
 
-- **不要推翻工具对制作方式的判断**（实拍 / AI / 3D / 代码 / 录屏）。像素统计（用色数、平坦块、噪声）正是工具已经用过的证据，你再用一遍只会得出同样或更差的结论。实测：看不了图的 agent 把 AI 生成的铅笔素描判成"白底版式卡"、把玻璃质感 3D 元素判成"代码界面"。
-- 你能做、也应该做的：核对时间轴和切点、读 OCR 文字轨甄别误读、用 `stems/` 的电平判断有没有人声、读元数据（AIGC 标识、平台转码标记）、把工具的低置信镜头列进"不确定点"。
-- 一句话结论里写明"未开 VLM、未看画面"，并把工具标了"实拍还是 AI 待确认"的镜头原样保留为待确认。
+- **Don't override the tool's production-method verdict** (live action / AI / 3D / code / screen recording). Pixel statistics (color count, flat-block ratio, noise) are exactly the evidence the tool already used — running the same analysis again in your head will only get you the same conclusion or a worse one. Measured: an agent that can't see images misjudged an AI-generated pencil sketch as a "white-background layout card," and a glass-material 3D element as a "code UI."
+- What you can and should do instead: check the timeline and cut points, read the OCR text track to catch misreads, use the levels in `stems/` to judge whether voice is present, read the metadata (AIGC marker, platform transcoding flag), and list the tool's low-confidence shots under "open questions."
+- In the one-line verdict, state plainly "VLM off, footage not reviewed visually," and leave any shot the tool flagged "live action or AI unconfirmed" exactly as unconfirmed.
 
-## 原片 / 参考片：判 AI 前先写反方证据
+## Original/reference footage: write the counter-evidence before calling it AI
 
-只有一个连续镜头、没有 AIGC 标识、也没有 24→30 重复帧的写实或手作质感视频（定格动画、俯拍生活片、手作微缩场景），工具常会判成 AI。看图后如果找不到明确的 AI 破绽（形变、纹理闪烁、物理错误、文字乱码），**不要给高置信度**：写成"AI 还是实拍 / 定格动画待确认（倾向 X）"，列出正反两方的证据，置信度不超过 0.7。
+A single continuous shot with a documentary or handmade feel (stop motion, an overhead everyday-life shot, a handcrafted miniature scene), with no AIGC marker and no 24→30 duplicate frames, is something the tool often misjudges as AI. If, after looking at it, you can't find a clear AI tell (deformation, texture flicker, broken physics, garbled text), **don't assign high confidence**: write it as "AI vs. live action / stop motion unconfirmed (leaning X)," list the evidence on both sides, and cap confidence at 0.7.
 
-## 影视解说、混剪：先判是不是剪进来的影视片段
+## Commentary videos, montages: first decide whether it's cut-in film/TV footage
 
-画面嵌在黑边里时，工具会在证据里写「影视片段线索」，并把镜头标成「AI 视频还是影视片段待确认」或「实拍还是影视片段待确认」。工具测不出谁拍的，这一步要你看图：
+When the picture is letterboxed in black bars, the tool notes "film-footage clues" in the evidence and flags the shot "AI video or film footage unconfirmed" or "live action or film footage unconfirmed." The tool can't tell who shot it — this step needs your eyes:
 
-- 认得出演员或剧集、剧组规模的布光和布景、群演、台标或平台水印、清楚可读的场景文字 → `film_footage`。
-- 脸过于完美、不同角色长得很像、手和文字出错、纹理漂移 → `ai_video`（AI 短剧解说的版式和真人剧解说一模一样，别只看版式）。
-- 作者自己出镜的口播、插进来的截图或 AI 画面，按镜头分别标。
-- `live_action` 只给作者或客户自己拍的画面。
+- Recognizable actors or a show, crew-scale lighting and sets, extras, a channel logo or platform watermark, clearly legible on-screen text → `film_footage`.
+- Faces too perfect, different characters look alike, hands and text come out wrong, texture drifting → `ai_video` (an AI short-drama commentary uses the exact same layout as a real one — don't judge by layout alone).
+- If the creator's own talking-head, or an inserted screenshot or AI footage, is cut in, label it shot by shot.
+- `live_action` is only for footage the creator or client shot themselves.
 
-## 平台转码视频（微信 / 抖音 / TikTok 下载的文件）
+## Platform-transcoded video (files downloaded from WeChat / Douyin / TikTok)
 
-元数据里有 `Tencent CAPD MTS`、`Wxmm_`、`vid:v…` 时，工具会标 `video_context.transcoded`。二次压缩会抹掉传感器噪声、带来假的插帧节奏，所以：
+When the metadata contains `Tencent CAPD MTS`, `Wxmm_`, `vid:v…`, the tool flags `video_context.transcoded`. Re-compression wipes out sensor noise and introduces a fake interpolation rhythm, so:
 
-- 噪声类证据失效，"没有噪声"不再说明是 AI；工具会把这类镜头标成"实拍还是 AI 待确认"。
-- 仍然可靠的证据：24→30 的重复帧（生成模型多输出 24fps；整片原生 30fps、没有重复帧更像手机直出）、AIGC 隐式标识、画面内容（真手、真实环境、物理是否自然——这一条必须看图或开 VLM）。
-- 证据冲突时的优先级：**规律的 24→30 重复帧 + AIGC 隐式标识**同时存在时，比"看图没发现 AI 破绽"更有分量，不要据此把镜头改判成实拍；最多写"倾向 AI，实拍待确认"。反过来，整片原生 30fps、无重复帧、无 AIGC 标识，再加上看图画面正常，才判实拍。
-- 重新压缩过、平台标记被抹掉的文件（下载工具去了元数据、仓库 `docs/cases/videos/` 的样片）不会被标成转码，但同样有假的插帧节奏。只有「清晰度周期起伏」、没有重复帧的镜头，工具会标「AI 还是实拍待确认」，看图结论可以直接改判。
+- Noise-based evidence stops working — "no noise" no longer means AI; the tool will flag these shots "live action or AI unconfirmed."
+- Evidence that's still reliable: 24→30 duplicate frames (generative models mostly output 24fps; the whole video being native 30fps with no duplicate frames looks more like a direct phone export), an implicit AIGC marker, and the actual content (real hands, a real environment, whether physics looks natural — this one requires looking at the picture or using a VLM).
+- Priority when evidence conflicts: **a regular 24→30 duplicate-frame pattern plus an implicit AIGC marker** outweighs "I looked and didn't spot an AI tell" — don't use the latter to override the former into live action; at most write "leaning AI, live action unconfirmed." Conversely, only call it live action when the whole video is native 30fps, has no duplicate frames, no AIGC marker, and the footage looks normal on inspection.
+- A file that's been re-compressed with the platform marker stripped (a download tool removed the metadata, or a sample clip from the repo's `docs/cases/videos/`) won't be flagged as transcoded, but still carries the same fake interpolation rhythm. The tool flags a shot "AI vs. live action unconfirmed" only from "sharpness oscillating periodically" with no duplicate frames — your visual-review verdict can override this one directly.

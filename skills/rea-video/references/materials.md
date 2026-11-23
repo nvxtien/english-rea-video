@@ -1,34 +1,34 @@
-# 用户真实素材
+# The user's real assets
 
-**定义**：画面里不是制作方生成或渲染、而是从现实中引入的像素，包括实拍视频、真实照片、网页/App 截图、录屏、版式里播放的视频片段、贴上去的 Logo / 商品图。复刻时这些必须由用户提供原文件，**不能写成"用 AI 生成"**。
+**Definition**: pixels in the frame that weren't generated or rendered by the production, but brought in from reality — live-action footage, real photos, web/app screenshots, screen recordings, a video clip playing inside a layout template, a pasted-on logo/product image. When remaking, the user must supply the original file for these — **never write "can be AI-generated."**
 
-**和「参考素材」分开**：AI 视频、数字人、3D 画面里出现的商品、Logo、人物，像素是模型或渲染器做出来的，不算真实素材；它们记在 `material.references`，报告里是「复刻要准备的参考素材」，复刻时作为参考图（`@图片N`）喂给模型。实拍画面里的商品是道具，同样记为参考。
+**Distinct from "reference material"**: a product, logo, or person appearing in AI video, digital-avatar, or 3D footage is made of model- or renderer-produced pixels, so it doesn't count as a real asset — it's logged under `material.references`, shown in the report as "reference material to prepare for the remake," and fed to the model as a reference image (`@imageN`) when remaking. A product that appears in live-action footage is a prop and is likewise logged as reference.
 
-## 工具怎么标
+## How the tool flags it
 
-- **整帧**：
-  - 实拍 → 实拍视频素材
-  - 录屏/截图 → 录屏素材或界面截图（静止的算截图）
-  - 静帧/推拉且来源是照片或截图 → 真实照片或截图
-  - 静帧来源不明（没开 VLM）→ "图片素材（真实/AI 待确认）"，不计为真实素材
-- **嵌入**（只在渲染画面里检测，即代码渲染、录屏、3D、渲染卡片）：
-  - 照片纹理区域：灰度熵高、无平涂，且不在字幕带 → 照片/图片素材，**标为"真实还是 AI 待确认"**（模板里贴的也可能是 AI 图）。要么由 VLM 确认，要么你自己看图判断
-  - 浅色面板 + 单帧 ≥6 处小字 → 界面截图（直接算真实素材）
-  - 区域内有运动而周围静止 → 嵌入视频片段或录屏
-- **VLM**：`embedded_assets` 里 `is_real_material=true` 的条目。底层是渲染版式（代码、录屏、静图）时算嵌入素材，VLM 说的 `real_footage` 记为「嵌入视频片段」（它可能本身是 AI 视频）；底层是 AI 视频 / 数字人 / 实拍，或 3D 里的商品、Logo、人物，记为参考素材。
+- **Whole-frame**:
+  - Live action → live-action video asset
+  - Screen recording/screenshot → screen-recording asset or UI screenshot (a still one counts as a screenshot)
+  - A freeze frame/pan whose source is a photo or screenshot → real photo or screenshot
+  - A freeze frame with an unclear source (no VLM) → "image asset (real/AI unconfirmed)," not counted as a real asset
+- **Embedded** (only detected inside rendered footage — i.e. code render, screen recording, 3D, a rendered card):
+  - A photo-textured region: high grayscale entropy, no flat color, and not inside a subtitle band → photo/image asset, **flagged "real vs. AI unconfirmed"** (something pasted into a template can also be an AI image). Either get the VLM to confirm it, or judge by eye yourself.
+  - A light-colored panel with ≥6 small-text spots in a single frame → UI screenshot (counted as a real asset directly)
+  - A region with motion while its surroundings stay still → an embedded video clip or screen recording
+- **VLM**: entries under `embedded_assets` with `is_real_material=true`. When the underlying footage is a rendered layout (code, screen recording, still image), it counts as an embedded asset; something the VLM calls `real_footage` is logged as an "embedded video clip" (it could itself be an AI video). When the underlying footage is AI video / digital avatar / live action, or a product/logo/person inside 3D footage, it's logged as reference material instead.
 
-## 已知漏检
+## Known misses
 
-- 暗色、半透明、作为氛围背景的照片（例如 mediank 的 NASA 背景图）：纹理对比太低，确定性检测不出来。看到深色模板时，要自己看一眼背景。
-- 暗色主题网页截图：不是浅色面板，检测不到，要看画面里有没有浏览器或界面框。
-- 实拍或 AI 画面里叠加的小 Logo、商品图：确定性层不在照片底图上做嵌入检测（容易误报），依赖 VLM。
+- A dark, semi-transparent photo used as an ambient background (e.g. mediank's NASA background image): texture contrast is too low for deterministic detection to catch. When you see a dark-themed template, take a look at the background yourself.
+- A dark-theme web screenshot: it's not a light-colored panel, so it won't be detected — check by eye for a browser frame or UI chrome.
+- A small logo or product image overlaid on live-action or AI footage: the deterministic layer doesn't run embedded-asset detection on a photographic base image (too many false positives) — this relies on the VLM.
 
-## 素材库空镜
+## Stock-footage filler shots
 
-城市航拍、延时、风景、商务人物、手部特写这类和视频主体无关的实拍空镜，常是从素材网站买的，不是作者自己拍的。工具会把它们标成「实拍视频素材」。看图时在 `description` 写明「疑似素材库空镜」，交付时和作者自拍的素材分开列：复刻时到素材网站找同类即可，不用向用户要原片。
+Aerial city shots, timelapses, landscapes, stock business-people, hand close-ups — live-action filler unrelated to the video's main subject — are often bought from a stock site, not shot by the creator. The tool flags these as "live-action video asset." When reviewing, note "likely stock filler" in `description`, and list it separately from the creator's own footage when delivering: for the remake, just find the same kind of clip on a stock site — there's no need to ask the user for the original file.
 
-影视片段（`film_footage`）同理：素材来自片方，交付时写「需要找原片对应片段，商用要授权」，不要写成用户自己的素材。
+The same goes for film/TV footage (`film_footage`): the asset belongs to the studio — when delivering, write "need to find and cut in the matching source clip; commercial use needs licensing" rather than treating it as the user's own asset.
 
-## 交付时的写法
+## How to write it up for delivery
 
-逐条列出：镜头号、时间、素材类型、画面位置、内容描述，以及"复刻时需要你提供：……"。
+List it item by item: shot number, time, asset type, position in frame, content description, and "you need to supply this for the remake: ..."

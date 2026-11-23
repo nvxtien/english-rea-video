@@ -1,43 +1,43 @@
 # capsule-cinema
 
-开源的本地生成流程：https://github.com/JuneYaooo/capsule-cinema
+An open-source local generation pipeline: https://github.com/JuneYaooo/capsule-cinema
 
-## 能做什么
+## What it can do
 
-按拆解结果逐镜生成 AI 镜头，拼回原时间线；`rea-video remake-plan` / `remake-run` 直接对接。
+Generates AI shots one by one from the breakdown and cuts them back into the original timeline; `rea-video remake-plan` / `remake-run` hook into it directly.
 
-## 费用
+## Cost
 
-- capsule-cinema 本身免费开源，本地部署。
-- 模型和密钥用户自己配，按模型调用计费，费用付给模型平台。
-- 生成前先 `--dry-run` 给用户看调用次数和费用，用户同意再跑。
+- capsule-cinema itself is free and open-source, self-hosted.
+- The user configures their own model and API keys, billed per model call, paid to the model platform.
+- Run `--dry-run` before generating to show the user the call count and cost; only run for real once they agree.
 
-## 用户要用时：帮他装好接上
+## When the user wants to use it: set it up and hook it in for them
 
-由你帮用户装好、接上，做到用户能直接开始。装之前说清装什么、从哪装；花钱的事由用户决定。已经知道的（参考视频、报告、要换成什么）不要再问。
+You install and hook it up so the user can start right away. Before installing, say clearly what you're installing and from where; anything that costs money is the user's call. Don't re-ask for anything you already know (the reference video, the report, what to swap in).
 
-1. 没装（`rea-video remake-plan` 报找不到仓库）：读 https://raw.githubusercontent.com/JuneYaooo/capsule-cinema/main/docs/install.md 照着装；装好后 `rea-video prefs capsule_root <安装目录>` 记下，`remake-run` 用装了它依赖的那个 Python（`--python`）。
-2. 密钥让用户自己填进安装目录的 `.env`，只告诉用户要填哪几个变量名，不要让用户把密钥贴进对话。
-3. 按 SKILL.md「复刻」问模型、要换什么，`rea-video plan` 出方案，再按下面出任务、dry-run、跑、拼回原时间线。
+1. Not installed (`rea-video remake-plan` reports it can't find the repo): read https://raw.githubusercontent.com/JuneYaooo/capsule-cinema/main/docs/install.md and follow it. Once installed, record it with `rea-video prefs capsule_root <install dir>`; `remake-run` uses the Python that has its dependencies installed (`--python`).
+2. Have the user fill the API keys into the `.env` in the install directory themselves — just tell them which variable names to fill in, never have the user paste a key into the chat.
+3. Ask about the model and what to swap per SKILL.md's "Remaking" section, have `rea-video plan` produce the plan, then create jobs, dry-run, run, and assemble back into the original timeline per below.
 
-## 怎么跑
+## How to run it
 
-`remake-plan` 照报告第二部分的方案出任务（一个单元的每次调用一个任务，用 `remake/prompts.json` 里的最终提示词），方案检查有 ❌ 时不出任务；`remake-run` 交给 capsule-cinema 跑完，`remake` 按原片切点拆回各镜头。方案不迁就执行端：capsule-cinema 还没接的模型会在 `remake-run` 时报错，这时把提示词和 `remake/refs/` 里的参考交给用户在模型自己的平台上生成。
+`remake-plan` creates jobs from report part two's plan (one job per call within a unit, using the final prompts in `remake/prompts.json`) — it won't create jobs if the plan check has any ❌. `remake-run` hands them to capsule-cinema to run; `remake` splits the result back into shots per the original cut points. The plan doesn't bend to what the runner can do: a model capsule-cinema hasn't integrated yet will error out at `remake-run` — in that case, hand the prompt and the references under `remake/refs/` to the user to generate on that model's own platform.
 
-生成要用 capsule-cinema 自己的 Python 环境。`rea-video remake-run` / `capsule-draft` 会自动找 `$CAPSULE_CINEMA_PYTHON` 或 `<capsule-root>/.venv/bin/python`，也可以用 `--python` 指定。
+Generation needs capsule-cinema's own Python environment. `rea-video remake-run` / `capsule-draft` automatically look for `$CAPSULE_CINEMA_PYTHON` or `<capsule-root>/.venv/bin/python`, or you can specify one with `--python`.
 
 ```bash
-CC=$CAPSULE_CINEMA_ROOT   # capsule-cinema 仓库路径
-rea-video remake-plan out/ref/breakdown.json --capsule-root $CC   # 照报告第二部分的方案出任务
-rea-video remake-run out/ref/remake/jobs.json --dry-run      # 先给用户看任务和费用；--only G2 只跑一个单元
-rea-video remake-run out/ref/remake/jobs.json                # 用户确认后再跑
-rea-video assemble out/ref/breakdown.json out/ref/remake/results.json                   # 拼回原时间线 + compare.mp4
+CC=$CAPSULE_CINEMA_ROOT   # path to the capsule-cinema repo
+rea-video remake-plan out/ref/breakdown.json --capsule-root $CC   # creates jobs from report part two's plan
+rea-video remake-run out/ref/remake/jobs.json --dry-run      # show the user the jobs and cost first; --only G2 runs just one unit
+rea-video remake-run out/ref/remake/jobs.json                # run for real once the user confirms
+rea-video assemble out/ref/breakdown.json out/ref/remake/results.json                   # assemble back into the original timeline + compare.mp4
 rea-video capsule-draft out/ref/breakdown.json --capsule-root $CC --capsule-name xxx [--write-capsule]
 ```
 
-- jobs.json 里每个任务的 `executor` 取值：
-  - `capsule_cinema`：调模型生成
-  - `local_ffmpeg`：静态图本地重建
-  - `keep_original`：保留原片，比如代码渲染、录屏、真实素材
-- `user_assets`：这个镜头需要用户提供的真实素材。生成结果只是近似，要提醒用户。
-- `capsule-draft`：通过 capsule-cinema 自带的 `tool_factory` 注入拆解结果，不改 capsule-cinema 代码，生成的配方草稿默认是 `review_required`。
+- Each job's `executor` in jobs.json:
+  - `capsule_cinema`: calls a model to generate
+  - `local_ffmpeg`: local rebuild for a still image
+  - `keep_original`: keeps the original footage — e.g. for code render, screen recording, real assets
+- `user_assets`: this shot needs a real asset the user has to supply. The generated result is only an approximation — remind the user.
+- `capsule-draft`: injects the breakdown result through capsule-cinema's own `tool_factory`, without modifying capsule-cinema's code; the generated recipe draft defaults to `review_required`.
