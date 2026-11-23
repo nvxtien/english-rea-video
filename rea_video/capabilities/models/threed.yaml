@@ -1,18 +1,18 @@
-# 3D 生成（商品多角度一致 / 转台 / 白模参考）
+# 3D generation (product multi-angle consistency / turntable / white-model reference)
 
 models:
   - id: hunyuan-3d
-    name: Hunyuan 3D（3.x）
+    name: Hunyuan 3D (3.x)
     vendor: Tencent
     category: threed
     status: ga
     access: [api, open-weights]
     primitives: [threed.image_to_3d]
     strengths:
-      - 三者中最稳定，很少出现破面
-      - 支持指定视角输入；可选 PBR 材质，4K PBR 纹理需额外付费
-      - 最适合高保真商品展示
-    license: {commercial: true, note: 托管版可商用；开源权重许可需单独核对}
+      - The most stable of the three — rarely produces broken faces
+      - Supports specifying viewpoint input; optional PBR materials, with 4K PBR textures as a paid add-on
+      - Best suited for high-fidelity product showcases
+    license: {commercial: true, note: "The hosted version can be used commercially; check the open-weights license separately"}
     sources:
       - https://www.3daistudio.com/blog/rodin-2-5-vs-tripo-vs-hunyuan-3d-comparison
     verified: {date: 2026-10-29, basis: third-party}
@@ -26,8 +26,8 @@ models:
     access: [api, app]
     primitives: [threed.image_to_3d]
     strengths:
-      - 5 档质量；接受 2–5 张视角图
-      - 可去除原图的烘焙光照；有对称开关，适合车辆等对称物体
+      - 5 quality tiers; accepts 2–5 viewpoint images
+      - Can remove baked-in lighting from the source image; has a symmetry toggle, good for symmetric objects like vehicles
     license: {commercial: true}
     sources:
       - https://www.3daistudio.com/blog/rodin-2-5-vs-tripo-vs-hunyuan-3d-comparison
@@ -42,9 +42,9 @@ models:
     access: [api, app]
     primitives: [threed.image_to_3d]
     strengths:
-      - 网格干净（约 2 万面以内），带 PBR 纹理；适合游戏用的低模
+      - Clean mesh (around 20k faces or under), with PBR textures; good for game-ready low-poly models
     weaknesses:
-      - 不适合高保真商品展示
+      - Not suited for high-fidelity product showcases
     license: {commercial: true}
     sources:
       - https://www.3daistudio.com/blog/rodin-2-5-vs-tripo-vs-hunyuan-3d-comparison

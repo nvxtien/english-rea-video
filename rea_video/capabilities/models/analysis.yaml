@@ -1,6 +1,6 @@
-# 分析侧（拉片）：VLM 负责语义，确定性工具负责精确的时间与位置
-# 原则：VLM 不擅长逐帧精度和计数（video-replicate-studio 实测让 VLM 数手指，14 张只对 7 张），
-#       精确量一律交给确定性工具，VLM 只做解释和提示词草稿。
+# Analysis side (decomposition): a VLM handles semantics, deterministic tools handle precise time and position
+# Principle: a VLM is bad at frame-exact precision and counting (video-replicate-studio tested a VLM counting fingers — it only got 7 of 14 right),
+#            so hand any precise quantity to deterministic tools — the VLM is only for interpretation and prompt drafts.
 
 models:
   # ---------- VLM ----------
@@ -14,9 +14,9 @@ models:
     limits:
       duration_s: {max: 10800}
     strengths:
-      - 视频理解综合第一；最长 3 小时；音画联合理解
+      - Overall the best at video understanding; up to 3 hours; joint audio-visual understanding
     weaknesses:
-      - 闭源；时间戳精度未公开，需要用确定性工具校准
+      - Closed-source; timestamp precision isn't published, needs calibrating against a deterministic tool
     license: {commercial: true}
     sources:
       - https://usefulai.com/models/video-understanding
@@ -33,9 +33,9 @@ models:
     limits:
       duration_s: {max: 10800}
     strengths:
-      - 更快更便宜，适合批量的初筛拉片
+      - Faster and cheaper, good for a first-pass bulk decomposition
     weaknesses:
-      - 困难的时序推理不如 3.1 Pro
+      - Weaker than 3.1 Pro at hard temporal reasoning
     license: {commercial: true}
     sources:
       - https://usefulai.com/models/video-understanding
@@ -43,17 +43,17 @@ models:
     confidence: medium
 
   - id: doubao-seed-2.0-pro
-    name: Doubao Seed 2.0 Pro（豆包）
+    name: "Doubao Seed 2.0 Pro"
     vendor: ByteDance
     category: analysis
     status: ga
     access: [api]
     primitives: [analyze.video_understanding]
     strengths:
-      - 音画分析；综合分接近 Gemini，价格更低
-      - 国内可直接调用，适合中文内容
+      - Joint audio-visual analysis; overall score close to Gemini's, at a lower price
+      - Directly callable within China, good for Chinese-language content
     weaknesses:
-      - 最大时长未公开
+      - Maximum duration isn't published
     license: {commercial: true}
     sources:
       - https://usefulai.com/models/video-understanding
@@ -70,9 +70,9 @@ models:
     limits:
       duration_s: {max: 7200}
     strengths:
-      - 直接输出带时间戳的摘要、章节和结构化 JSON
+      - Directly outputs timestamped summaries, chapters, and structured JSON
     weaknesses:
-      - 开放式内容问答较弱
+      - Weaker at open-ended content Q&A
     license: {commercial: true}
     sources:
       - https://usefulai.com/models/video-understanding
@@ -80,34 +80,34 @@ models:
     confidence: medium
 
   - id: qwen3.5-397b-a17b
-    name: Qwen3.5 397B-A17B（开源）
+    name: "Qwen3.5 397B-A17B (open-source)"
     vendor: Alibaba
     category: analysis
     status: ga
     access: [open-weights]
     primitives: [analyze.video_understanding]
     strengths:
-      - 开源权重中视频理解分最高，可私有化部署
+      - Highest video-understanding score among open-weight models, can be self-hosted
     weaknesses:
-      - 需要服务器级算力；音频需要单独处理
-    license: {commercial: conditional, note: 以模型许可为准}
+      - Needs server-grade compute; audio needs to be processed separately
+    license: {commercial: conditional, note: "Per the model's license"}
     sources:
       - https://usefulai.com/models/video-understanding
     verified: {date: 2026-10-29, basis: third-party}
     confidence: medium
 
-  # ---------- 确定性工具 ----------
+  # ---------- Deterministic tools ----------
   - id: pyscenedetect
     name: PySceneDetect
-    vendor: 开源
+    vendor: Open-source
     category: analysis
     status: ga
     access: [open-weights]
     primitives: [analyze.shot_boundary]
     strengths:
-      - 轻量；内容检测或阈值检测都能快速给出硬切
+      - Lightweight; both content detection and threshold detection quickly find hard cuts
     weaknesses:
-      - 溶解和遮挡转场容易漏检，漏检的切点用 SSIM 二分定位到帧
+      - Dissolves and occlusion transitions are prone to being missed — locate a missed cut to the exact frame with an SSIM binary search
     license: {commercial: true, note: BSD-3-Clause}
     sources:
       - https://github.com/Breakthrough/PySceneDetect
@@ -116,13 +116,13 @@ models:
 
   - id: transnetv2
     name: TransNetV2
-    vendor: 开源
+    vendor: Open-source
     category: analysis
     status: ga
     access: [open-weights]
     primitives: [analyze.shot_boundary]
     strengths:
-      - 学习式切镜检测，对渐变转场比阈值法更稳
+      - Learned shot-boundary detection, more stable than a threshold method on gradual transitions
     license: {commercial: true, note: MIT}
     sources:
       - https://github.com/soCzech/TransNetV2
@@ -131,16 +131,16 @@ models:
 
   - id: whisperx
     name: WhisperX
-    vendor: 开源
+    vendor: Open-source
     category: analysis
     status: ga
     access: [open-weights]
     primitives: [analyze.asr_word_align]
     strengths:
-      - 字级时间对齐；Hypit 用它作为语义时间的基础
+      - Word-level time alignment; Hypit uses it as the basis for semantic timing
     weaknesses:
-      - 生造词和陌生专名容易识别错
-      - 中文需要单独准备对齐资源
+      - Made-up words and unfamiliar proper nouns are prone to misrecognition
+      - Chinese needs separate alignment resources prepared
     license: {commercial: true, note: BSD-2-Clause}
     sources:
       - https://github.com/m-bain/whisperX
@@ -149,14 +149,14 @@ models:
 
   - id: funasr-sensevoice
     name: FunASR / SenseVoice
-    vendor: Alibaba（开源）
+    vendor: "Alibaba (open-source)"
     category: analysis
     status: ga
     access: [open-weights]
     primitives: [analyze.asr_word_align]
     strengths:
-      - 中文识别与时间戳强；SenseVoice 同时输出情感和音频事件标签
-    license: {commercial: conditional, note: 以模型许可为准}
+      - Strong Chinese recognition and timestamps; SenseVoice also outputs emotion and audio-event tags
+    license: {commercial: conditional, note: "Per the model's license"}
     sources:
       - https://github.com/modelscope/FunASR
       - https://github.com/FunAudioLLM/SenseVoice
@@ -165,14 +165,14 @@ models:
 
   - id: paddleocr
     name: PaddleOCR
-    vendor: Baidu（开源）
+    vendor: "Baidu (open-source)"
     category: analysis
     status: ga
     access: [open-weights]
     primitives: [analyze.ocr_text_track]
     strengths:
-      - 中文 OCR 强，同时给出文字框
-      - 逐帧识别后按 IoU 关联，就得到文字轨迹（出现、移动、消失）
+      - Strong Chinese OCR, also gives text bounding boxes
+      - Per-frame recognition linked by IoU produces a text trajectory (appearance, movement, disappearance)
     license: {commercial: true, note: Apache 2.0}
     sources:
       - https://github.com/PaddlePaddle/PaddleOCR
@@ -180,15 +180,15 @@ models:
     confidence: high
 
   - id: sam-video
-    name: SAM 系列（SAM 2 / SAM 3）
-    vendor: Meta（开源）
+    name: "The SAM family (SAM 2 / SAM 3)"
+    vendor: "Meta (open-source)"
     category: analysis
     status: ga
     access: [open-weights]
     primitives: [analyze.segmentation]
     strengths:
-      - 视频目标分割与跟踪；SAM 3 支持文本提示
-    license: {commercial: conditional, note: 以各版本许可为准}
+      - Video object segmentation and tracking; SAM 3 supports text prompts
+    license: {commercial: conditional, note: "Per each version's license"}
     sources:
       - https://github.com/facebookresearch/sam2
     verified: {date: 2026-10-29, basis: knowledge}
@@ -196,43 +196,43 @@ models:
 
   - id: matanyone-2
     name: MatAnyone 2
-    vendor: 学术开源
+    vendor: Academic open-source
     category: analysis
     status: ga
     access: [open-weights]
     primitives: [analyze.matting]
     strengths:
-      - 基于记忆传播的稳定视频抠像，发丝边缘好；ComfyUI 有节点
-    license: {commercial: conditional, note: 以仓库许可为准}
+      - Memory-propagation-based stable video matting, good hair-edge handling; has a ComfyUI node
+    license: {commercial: conditional, note: "Per the repo's license"}
     sources:
       - https://studio.aifilms.ai/blog/matanyone-2-video-matting
     verified: {date: 2026-10-29, basis: third-party}
     confidence: medium
 
   - id: robust-video-matting
-    name: RobustVideoMatting（RVM）
-    vendor: 开源
+    name: "RobustVideoMatting (RVM)"
+    vendor: Open-source
     category: analysis
     status: ga
     access: [open-weights]
     primitives: [analyze.matting]
     strengths:
-      - 轻量实时人像抠像；video-replicate-studio 在用
-    license: {commercial: conditional, note: "GPL-3.0，与闭源产品集成要注意"}
+      - Lightweight, real-time portrait matting; used by video-replicate-studio
+    license: {commercial: conditional, note: "GPL-3.0 — watch out when integrating with a closed-source product"}
     sources:
       - https://github.com/PeterL1n/RobustVideoMatting
     verified: {date: 2026-10-29, basis: knowledge}
     confidence: medium
 
   - id: volcengine-matting
-    name: 火山引擎人像视频抠像
+    name: "Volcano Engine portrait video matting"
     vendor: ByteDance
     category: analysis
     status: ga
     access: [api, api-aggregator]
     primitives: [analyze.matting]
     strengths:
-      - 托管 API，输出带透明通道的 WEBM/MOV；Hypit 已接入
+      - A hosted API, outputs WEBM/MOV with an alpha channel; already integrated into Hypit
     license: {commercial: true}
     sources:
       - https://github.com/hypit-ai/hypit/blob/main/packages/provider-hypihub/README.md
@@ -241,37 +241,37 @@ models:
 
   - id: video-depth-anything
     name: Video Depth Anything
-    vendor: ByteDance（开源）
+    vendor: "ByteDance (open-source)"
     category: analysis
     release: 2025-01
     status: ga
     access: [open-weights]
     primitives: [analyze.depth_video]
     strengths:
-      - 长视频深度估计，帧间稳定，不像逐帧深度那样闪
-      - 有 Small / Base / Large 三档，Small 消费级显卡就能跑
+      - Long-video depth estimation, stable frame to frame, without the flicker of per-frame depth
+      - Comes in Small / Base / Large tiers — Small runs on a consumer GPU
     weaknesses:
-      - 快速转身、手部交叠和遮挡处仍可能缺肢体，出驱动前要整段看一遍
-    license: {commercial: conditional, note: Small 为 Apache 2.0；Base / Large 为 CC BY-NC 4.0，不能商用}
+      - Fast turns, overlapping hands, and occlusion can still lose limbs — watch the whole clip before producing a driver from it
+    license: {commercial: conditional, note: "Small is Apache 2.0; Base / Large are CC BY-NC 4.0, not for commercial use"}
     sources:
       - https://github.com/DepthAnything/Video-Depth-Anything
       - https://aiidelist.com/blog/remake-viral-video-codex-depth-maps-minimax-h3
     verified: {date: 2026-11-14, basis: third-party}
     confidence: medium
-    notes: 深度驱动复刻的做法见 aiidelist 的流程：原片转灰度深度视频，再和角色设定图一起交给视频模型
+    notes: "See aiidelist's write-up for the depth-driven remake approach: convert the original to a grayscale depth video, then hand it to the video model together with a character turnaround sheet"
 
   - id: dwpose
     name: DWPose
-    vendor: IDEA Research（开源）
+    vendor: "IDEA Research (open-source)"
     category: analysis
     release: 2023-07
     status: ga
     access: [open-weights]
     primitives: [analyze.pose_track]
     strengths:
-      - 全身含手指和脸部关键点；ComfyUI 的 controlnet_aux 有现成节点，出骨骼视频接 Wan VACE
+      - Full-body keypoints including fingers and face; ComfyUI's controlnet_aux has a ready-made node — feed a skeleton video into Wan VACE
     weaknesses:
-      - 只有 2D 关键点，转身和前后遮挡时左右容易翻
+      - Only 2D keypoints — left/right can flip on turns and front-back occlusion
     license: {commercial: true, note: Apache 2.0}
     sources:
       - https://github.com/IDEA-Research/DWPose
@@ -286,10 +286,10 @@ models:
     access: [app]
     primitives: [analyze.body_mocap]
     strengths:
-      - 上传一段视频就出清理过的 3D 动作，导出 FBX / BVH（HIK、Mixamo 骨架），能直接进 Blender
+      - "Upload a video and get cleaned-up 3D motion, exported as FBX/BVH (HIK, Mixamo rigs), ready to drop into Blender"
     weaknesses:
-      - 免费额度很少；BVH 导出要付费档
-    license: {commercial: conditional, note: 以平台条款为准}
+      - Very small free tier; BVH export needs a paid plan
+    license: {commercial: conditional, note: "Per the platform's terms"}
     sources:
       - https://rokoko.com/products/video
     verified: {date: 2026-11-14, basis: vendor}
@@ -297,28 +297,28 @@ models:
 
   - id: megasam
     name: MegaSaM
-    vendor: 学术开源（CVPR 2025）
+    vendor: "Academic open-source (CVPR 2025)"
     category: analysis
     status: ga
     access: [open-weights]
     primitives: [analyze.camera_motion]
     strengths:
-      - 从随手拍的动态视频中反解相机位姿与深度，对动态场景鲁棒
-    license: {commercial: conditional, note: 以仓库许可为准}
+      - Recovers camera pose and depth from casually shot dynamic video, robust on dynamic scenes
+    license: {commercial: conditional, note: "Per the repo's license"}
     sources:
       - https://arxiv.org/abs/2412.04463
     verified: {date: 2026-10-29, basis: vendor}
     confidence: medium
 
   - id: demucs
-    name: Demucs（htdemucs）
-    vendor: Meta（开源）
+    name: "Demucs (htdemucs)"
+    vendor: "Meta (open-source)"
     category: analysis
     status: ga
     access: [open-weights]
     primitives: [analyze.audio_separation]
     strengths:
-      - 人声、鼓、贝斯、其他四轨分离，效果是业界基线
+      - Splits voice, drums, bass, and other into four stems — the industry baseline
     license: {commercial: true, note: MIT}
     sources:
       - https://github.com/facebookresearch/demucs
@@ -327,14 +327,14 @@ models:
 
   - id: librosa-madmom
     name: librosa / madmom
-    vendor: 开源
+    vendor: Open-source
     category: analysis
     status: ga
     access: [open-weights]
     primitives: [analyze.beat_tempo]
     strengths:
-      - 检测节拍、BPM 和 onset，建立剪辑节奏的节拍锚点
-    license: {commercial: true, note: "librosa 为 ISC；madmom 代码 BSD，模型 CC-BY-NC-SA"}
+      - Detects beat, BPM, and onsets, establishing beat anchors for the cutting rhythm
+    license: {commercial: true, note: "librosa is ISC; madmom's code is BSD, its models are CC-BY-NC-SA"}
     sources:
       - https://github.com/librosa/librosa
       - https://github.com/CPJKU/madmom

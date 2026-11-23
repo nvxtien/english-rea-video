@@ -1,72 +1,72 @@
-# rea-video 路由规则：镜头特征（signals）→ 原语链（route）→ 候选模型（prefer，按优先级）
-# 规则只引用原语和模型 id；校验脚本会检查引用完整性和"模型确实支持该原语"。
-# 选模型时：跳过 status=shutdown；对 regions_excluded 和 license 做过滤；同等条件按成本排序。
+# rea-video routing rules: shot features (signals) → primitive chain (route) → candidate models (prefer, by priority)
+# Rules only reference primitive and model ids; the validation script checks reference integrity and "the model actually supports this primitive."
+# When picking a model: skip status=shutdown; filter by regions_excluded and license; sort by cost among otherwise-equal options.
 
 version: 0.1.0
 updated: 2026-10-29
 
 modes:
-  fidelity: 高保真复刻。结构、节奏、运镜、文字、动效逐项对齐，用 scorecard 衡量
-  adapt: 创意改编。保留原片"为什么有效"的关系（钩子、揭示、节奏），内容按新主题重写
-  # 两种模式可以按层混用，例如 {rhythm: fidelity, camera: fidelity, people: adapt, copy: adapt}
+  fidelity: High-fidelity remake. Structure, rhythm, camera work, text, and motion are matched item by item, measured with a scorecard
+  adapt: Creative adaptation. Keeps the relationships that made the original "work" (the hook, the reveal, the rhythm), with content rewritten around a new topic
+  # The two modes can be mixed per layer, e.g. {rhythm: fidelity, camera: fidelity, people: adapt, copy: adapt}
 
-# ---------------------------------------------------------------- 信号
-# 拉片阶段要检测的镜头特征，以及由哪些分析原语提供证据
+# ---------------------------------------------------------------- Signals
+# Shot features to detect during decomposition, and which analysis primitives provide the evidence
 signals:
-  text_or_ui_dominant: {detected_by: [analyze.ocr_text_track, analyze.video_understanding], desc: "文字/UI/图表/MG 是画面主体；字边锐利、像素对齐、轨迹规整"}
-  screen_ui:           {detected_by: [analyze.video_understanding, analyze.ocr_text_track], desc: 软件或网页界面的操作演示}
-  talking_head_frontal: {detected_by: [analyze.video_understanding, analyze.asr_word_align, analyze.camera_motion], desc: 正面口播，机位基本固定}
-  dialogue_coupled:    {detected_by: [analyze.asr_word_align, analyze.video_understanding], desc: 对白与画面强耦合的非正面镜头（多人对话、边做边说）}
-  precise_motion:      {detected_by: [analyze.video_understanding, analyze.segmentation, analyze.beat_tempo], desc: 舞蹈、变装、卡点手势等动作本身就是看点}
-  garment_change:      {detected_by: [analyze.video_understanding], desc: 服装电商的换装或展示}
-  physical_text_zh:    {detected_by: [analyze.ocr_text_track], desc: 画面中的实物文字（招牌、包装、屏幕），尤其中文}
-  product_hero:        {detected_by: [analyze.video_understanding, analyze.segmentation], desc: 商品外观或构图必须准确}
-  product_multiview:   {detected_by: [analyze.video_understanding, analyze.camera_motion], desc: 商品旋转、多角度展示}
-  complex_camera:      {detected_by: [analyze.camera_motion, analyze.shot_boundary], desc: 复杂运镜、遮挡转场、瞬间变换}
-  lens_look:           {detected_by: [analyze.video_understanding], desc: 鲜明的焦段、景深、畸变等镜头感}
-  recurring_character: {detected_by: [analyze.video_understanding, analyze.segmentation], desc: 同一角色或商品出现在多个镜头}
-  owned_footage_edit:  {detected_by: [], desc: 用户有权使用的已有素材，只需要换人、换物、换背景}
-  redub_only:          {detected_by: [analyze.asr_word_align], desc: 表演保留，只换台词或语言}
-  ambient_broll:       {detected_by: [analyze.video_understanding], desc: 氛围空镜，没有特定主体}
-  reusable_footage:    {detected_by: [], desc: 用户自有素材可直接复用}
-  still_image_motion:  {detected_by: [analyze.camera_motion], desc: 整帧是一张静态图做推拉摇移（Ken Burns），可测出缩放/平移参数}
-  static_hold:         {detected_by: [analyze.shot_boundary], desc: 静帧定格（图片或卡片停留）}
-  anim_2d:             {detected_by: [analyze.video_understanding], desc: 2D 动画（手绘逐帧、Live2D、AE/Spine 角色动画），工具测不出，靠看图}
-  stop_motion:         {detected_by: [analyze.video_understanding], desc: 定格动画（实物/黏土/纸偶逐帧拍摄），工具测不出，靠看图}
-  film_footage:        {detected_by: [analyze.video_understanding], desc: 剪进来的电影/电视剧/短剧画面（影视解说、混剪、名场面），像素上和实拍、AI 分不开，工具只给线索（黑边版式、24/25fps 源），靠看图}
-  ai_edited_footage:   {detected_by: [analyze.video_understanding], desc: 实拍画面被 AI 二次加工（换脸、对口型、风格化、换装、换背景）}
+  text_or_ui_dominant: {detected_by: [analyze.ocr_text_track, analyze.video_understanding], desc: "Text/UI/charts/motion graphics are the main subject; sharp text edges, pixel alignment, regular trajectories"}
+  screen_ui:           {detected_by: [analyze.video_understanding, analyze.ocr_text_track], desc: A software or web UI demo}
+  talking_head_frontal: {detected_by: [analyze.video_understanding, analyze.asr_word_align, analyze.camera_motion], desc: Frontal talking-head, camera position essentially fixed}
+  dialogue_coupled:    {detected_by: [analyze.asr_word_align, analyze.video_understanding], desc: A non-frontal shot where dialogue is tightly coupled to the picture (multi-person conversation, talking while doing something)}
+  precise_motion:      {detected_by: [analyze.video_understanding, analyze.segmentation, analyze.beat_tempo], desc: Dance, outfit change, beat-synced gestures — where the motion itself is the point}
+  garment_change:      {detected_by: [analyze.video_understanding], desc: An apparel e-commerce outfit change or showcase}
+  physical_text_zh:    {detected_by: [analyze.ocr_text_track], desc: Physical text in the frame (sign, packaging, screen), especially Chinese}
+  product_hero:        {detected_by: [analyze.video_understanding, analyze.segmentation], desc: Product appearance or composition must be exact}
+  product_multiview:   {detected_by: [analyze.video_understanding, analyze.camera_motion], desc: A product rotating, shown from multiple angles}
+  complex_camera:      {detected_by: [analyze.camera_motion, analyze.shot_boundary], desc: Complex camera work, occlusion transitions, instant transformations}
+  lens_look:           {detected_by: [analyze.video_understanding], desc: A distinctive lens feel — focal length, depth of field, distortion}
+  recurring_character: {detected_by: [analyze.video_understanding, analyze.segmentation], desc: The same character or product appears in multiple shots}
+  owned_footage_edit:  {detected_by: [], desc: Existing footage the user has rights to use, needing only a person/object/background swap}
+  redub_only:          {detected_by: [analyze.asr_word_align], desc: The performance stays; only the lines or language change}
+  ambient_broll:       {detected_by: [analyze.video_understanding], desc: Mood filler footage with no specific subject}
+  reusable_footage:    {detected_by: [], desc: The user's own footage can be reused directly}
+  still_image_motion:  {detected_by: [analyze.camera_motion], desc: "The whole frame is a still image being panned/zoomed (Ken Burns); scale/pan parameters can be measured"}
+  static_hold:         {detected_by: [analyze.shot_boundary], desc: A freeze frame (an image or card staying still)}
+  anim_2d:             {detected_by: [analyze.video_understanding], desc: "2D animation (hand-drawn frame-by-frame, Live2D, AE/Spine character animation) — undetectable by the tool, judged by eye"}
+  stop_motion:         {detected_by: [analyze.video_understanding], desc: "Stop motion (a physical object/clay/paper puppet shot frame by frame) — undetectable by the tool, judged by eye"}
+  film_footage:        {detected_by: [analyze.video_understanding], desc: "Footage cut in from an existing movie/TV show/short drama (commentary, montage, highlight reel) — indistinguishable from live action or AI at the pixel level; the tool only gives clues (letterboxed layout, a 24/25fps source), judged by eye"}
+  ai_edited_footage:   {detected_by: [analyze.video_understanding], desc: "Live-action footage that's been AI-edited afterward (face swap, lip sync, restyling, outfit swap, background swap)"}
 
-# ---------------------------------------------------------------- 拆分
+# ---------------------------------------------------------------- Segmentation
 segmentation:
   levels:
-    edit_shot: 剪辑镜头，由切镜检测得到，是客观事实
-    generation_unit: 生成单元，即一次模型调用的产物，与剪辑镜头不一一对应
-    layer: 同一画面内的纵向分层（代码层 / 生成层 / 素材层 / 字幕层）
+    edit_shot: An editing shot, found by cut detection — an objective fact
+    generation_unit: A generation unit — the output of one model call, which doesn't map 1:1 to editing shots
+    layer: Vertical layers within the same frame (code layer / generation layer / asset layer / subtitle layer)
   defaults:
     generation_unit_s: {min: 4, max: 15}
-    multishot_hardcut_s: {prefer: 8, max: 10}   # S06：单个生成单元内连续硬切的时长
-    motion_segment_s: {prefer: 10, max: 15, min: 3}   # 动作驱动视频每段的长度：在停顿处切，短段手脚更稳
-    same_scene_distance: 0.5                    # 相邻镜头首尾帧颜色分布距离（Bhattacharyya）低于它算同一场景
+    multishot_hardcut_s: {prefer: 8, max: 10}   # S06: duration of consecutive hard cuts within a single generation unit
+    motion_segment_s: {prefer: 10, max: 15, min: 3}   # length of each segment in a motion-driven video: cut at pauses — hands and feet are steadier in short segments
+    same_scene_distance: 0.5                    # adjacent shots count as the same scene when the color-distribution distance (Bhattacharyya) between their first/last frames is below this
   rules:
     - id: S01-merge-multishot
-      do: 同角色、同场景的连续镜头，若总时长不超过候选模型上限，就合并为一个生成单元，用 video.multi_shot 一次生成
-      why: 一致性和自然转场由模型内部解决
+      do: Consecutive shots with the same character and scene are merged into one generation unit and generated in a single call with video.multi_shot, as long as the total duration doesn't exceed the candidate model's limit
+      why: Consistency and natural transitions are handled internally by the model
     - id: S02-split-duration
-      do: 镜头超过候选模型的单次上限时，在动作停顿处切开，后一段以前一段的尾帧作首帧（video.i2v_first_frame 或 i2v_first_last）
+      do: When a shot exceeds the candidate model's single-call limit, cut it at an action pause, with the later segment using the earlier segment's last frame as its first frame (video.i2v_first_frame or i2v_first_last)
     - id: S03-split-transition
-      do: 遮挡转场、变装瞬间、强动作变化点单独切开，用首尾帧或关键帧精确控制
-      why: 例如风扇叶遮挡时换装，时机错一点就会穿帮
+      do: Cut an occlusion transition, an instant outfit change, or a sharp motion change into its own segment, controlled precisely with first/last frames or keyframes
+      why: "E.g. an outfit change hidden behind a spinning fan blade — mistiming it even slightly gives the trick away"
     - id: S04-vertical-layers
-      do: 文字、UI、图形、字幕抽成代码层；底下的画面走生成或素材层；最后合成
-      why: 生成模型重绘文字必然出错，代码层 100% 准确且方便修改
+      do: Pull text, UI, graphics, and subtitles out into a code layer; let the footage underneath go through generation or an asset layer; composite at the end
+      why: A generation model redrawing text will inevitably get it wrong; the code layer is 100% accurate and easy to edit
     - id: S05-end-state
-      do: 每个生成单元的提示词写清"动作过程 + 结束状态"，结束状态作为下一单元的衔接条件
+      do: "Each generation unit's prompt spells out \"the action, and the end state\"; the end state becomes the connecting condition for the next unit"
     - id: S06-hardcut-guard
-      do: 单个生成单元内连续硬切画面不超过约 8 秒（实践经验，超过约 10 秒常出问题）
+      do: Keep consecutive hard cuts within a single generation unit under about 8 seconds (from practical experience — beyond about 10 seconds problems get common)
     - id: S07-long-video
-      do: 长视频先按叙事段落切成多段分别处理，再拼接；拼接处检查商品外观一致、字幕与卖点对应、动作衔接
+      do: Split a long video into segments by narrative section and process them separately, then stitch them together; at each seam, check product-appearance consistency, that subtitles match the selling points, and that motion connects smoothly
 
-# ---------------------------------------------------------------- 画面路由
+# ---------------------------------------------------------------- Visual routing
 rules:
   - id: R01-code-graphics
     layer: overlay
@@ -74,7 +74,7 @@ rules:
     route: [render.code_graphics]
     prefer: [remotion, html-gsap-playwright, motion-canvas]
     verify: [ocr_text_match, layout_iou, timing_curve_error, pixel_similarity]
-    why: 文字和动效要求像素级准确且可改；生成模型做不到
+    why: Text and motion graphics need pixel-exact accuracy and need to stay editable; a generation model can't do that
 
   - id: R02-screen-demo
     layer: base
@@ -82,14 +82,14 @@ rules:
     route: [render.web_capture, render.code_graphics]
     prefer: [html-gsap-playwright, remotion]
     verify: [ocr_text_match, layout_iou]
-    why: 用真实或重建的界面驱动录屏，比生成更准确
+    why: Driving a recording with a real or rebuilt UI is more accurate than generating one
 
   - id: R03-talking-head
     layer: base
     when: [talking_head_frontal]
     route: [audio.voice_clone, avatar.audio_driven]
     prefer: [minimax-speech-2.8, omnihuman-2.0, kling-avatar-v2, heygen-avatar-v, ltx-2.3-lipsync]
-    alternatives: 短镜头可改用音画同出模型加声音参考（R16）
+    alternatives: A short shot can switch to a picture-and-sound-together model with an audio reference instead (R16)
     verify: [lip_sync, identity_consistency, speech_wer]
 
   - id: R04-precise-motion
@@ -98,9 +98,9 @@ rules:
     route: [motion.transfer, video.reference_video, analyze.depth_video, analyze.pose_track, video.control_video, analyze.body_mocap, render.3d_scene]
     prefer: [kling-motion-control, seedance-2.5, wan-2.2-animate, wan-animate-2, video-depth-anything, dwpose, wan-vace, rokoko-vision, blender]
     verify: [motion_trajectory_error, identity_consistency, beat_alignment]
-    why: 动作的时间行为无法用文字和静帧描述；首尾帧只锁两端，中间的编舞全靠模型猜
-    alternatives: 原片人物的外观或体型被带出来时，改用深度视频（换人换景、保留运镜）或骨骼视频（目标体型差很多）当驱动；要改机位或反复用这套动作时，单目动捕转白模，在 Blender 里重设机位渲染，再用白模参考生成
-    guard: 驱动视频先擦掉字幕、贴纸（会被当成画面的一部分学进去），按停顿切成短段（手脚和转身在短段里更稳）；用别人的舞蹈视频驱动要注意肖像权与版权
+    why: The time-based behavior of motion can't be described with text and still frames; first/last frames only lock the two ends — the model has to guess the choreography in between
+    alternatives: When the original performer's appearance or body shape would get carried over, switch to a depth video as the driver instead (swaps the person/scene, keeps the camera work) or a skeleton video (when the target's body shape differs a lot); when the camera angle needs to change or this motion will be reused, convert monocular mocap to a white model, re-set the camera in Blender and render, then generate using the white-model render as reference
+    guard: Erase subtitles and stickers from the driving video first (otherwise they get learned in as part of the picture); cut it into short segments at pauses (hands/feet and turns are steadier in short segments); using someone else's dance video as a driver raises portrait-rights and copyright concerns
 
   - id: R05-garment
     layer: base
@@ -108,7 +108,7 @@ rules:
     route: [image.tryon, video.i2v_first_frame, motion.transfer]
     prefer: [fashn-tryon-max, kling-virtual-tryon-3, fashn-v1.6, seedance-2.5, kling-3.0, kling-motion-control]
     verify: [identity_consistency, perceptual_similarity]
-    why: 先出试穿图并确认，再动起来，比直接让视频模型换装稳定
+    why: Producing and confirming a try-on image first, then animating it, is more stable than letting a video model change outfits directly
 
   - id: R06-physical-text-zh
     layer: base
@@ -116,7 +116,7 @@ rules:
     route: [image.text_render, video.i2v_first_frame]
     prefer: [gpt-image-2.5, gpt-image-2.6, qwen-image-3.0-pro, seedream-5.5, seedream-5.0, seedance-2.5, kling-3.0]
     verify: [text_render_accuracy, ocr_text_match]
-    guard: 文字需要长时间清晰稳定、或镜头运动大时，改走 R01 代码叠加（运动中视频模型会扭曲文字）
+    guard: When text needs to stay sharp and stable for a long time, or there's heavy camera motion, switch to R01's code overlay instead (a video model will distort text while moving)
 
   - id: R07-product-hero
     layer: base
@@ -124,7 +124,7 @@ rules:
     route: [image.edit_multi_ref, video.i2v_first_frame, video.i2v_first_last]
     prefer: [gpt-image-2.5, gpt-image-2.6, nano-banana-2.1, seedream-5.5, seedream-5.0, seedance-2.5, kling-3.0, veo-3.1]
     verify: [identity_consistency, perceptual_similarity]
-    why: 先用商品图合成首帧并确认，锁定外观后再生成运动
+    why: Compositing and confirming a first frame from the product photo first locks the appearance before generating motion
 
   - id: R08-product-multiview
     layer: base
@@ -132,7 +132,7 @@ rules:
     route: [threed.image_to_3d, render.3d_scene, video.reference_video]
     prefer: [hunyuan-3d, rodin-gen-2.5, blender, seedance-2.5]
     verify: [identity_consistency, camera_path_error]
-    why: 3D 模型保证多角度一致；可以直接渲染，也可以把白模渲染作为 Seedance 2.5 的参考
+    why: A 3D model guarantees multi-angle consistency; it can be rendered directly, or a white-model render can serve as a Seedance 2.5 reference
 
   - id: R09-complex-camera
     layer: base
@@ -140,7 +140,7 @@ rules:
     route: [video.keyframes, video.i2v_first_last]
     prefer: [kling-4.0, kling-3.0, veo-3.1, runway-gen-4.5, minimax-h3]
     verify: [camera_path_error, cut_alignment]
-    guard: 仍不可控时，在遮挡点切开（见 S03）
+    guard: If it's still uncontrollable, cut at the occlusion point (see S03)
 
   - id: R10-lens-look
     layer: base
@@ -176,7 +176,7 @@ rules:
     route: [video.t2v]
     prefer: [minimax-h3, hailuo-2.3, seedance-2.0, wan-2.2, seedance-2.5]
     verify: [perceptual_similarity]
-    why: 最便宜的路线，按成本排序
+    why: The cheapest route — sorted by cost
 
   - id: R15-reuse-footage
     layer: base
@@ -191,7 +191,7 @@ rules:
     route: [image.edit_multi_ref, render.compose]
     prefer: [gpt-image-2.5, seedream-5.0, ffmpeg]
     verify: [camera_path_error, perceptual_similarity]
-    why: 拆解阶段已测出缩放/平移曲线，用一张图 + 本地 ffmpeg 就能精确复刻运动，不需要视频模型
+    why: The decomposition step already measured the scale/pan curve — one image plus local ffmpeg can reproduce the motion exactly, no video model needed
 
   - id: R18-static-hold
     layer: base
@@ -206,7 +206,7 @@ rules:
     route: [image.t2i, video.i2v_first_last, video.multi_reference]
     prefer: [kling-3.0, seedance-2.5, vidu-q3]
     verify: [identity_consistency, perceptual_similarity]
-    why: 先用图像模型定角色和画风（一张设定图），再首尾帧生成；要逐帧精确的口型和动作时，改走 AE / Live2D / Spine 工程
+    why: Fix the character and art style first with an image model (one turnaround sheet), then generate with first/last frames; when frame-exact lip sync and motion is needed, switch to an AE / Live2D / Spine project instead
 
   - id: R20-stop-motion
     layer: base
@@ -214,7 +214,7 @@ rules:
     route: [video.i2v_first_frame]
     prefer: [kling-3.0, seedance-2.5, vidu-q3]
     verify: [perceptual_similarity]
-    why: 首选真的拍：手机固定 + 定格 App 每秒 12 张；AI 生成只能近似定格的顿挫感，提示词写明 stop-motion、12fps
+    why: "Best to actually shoot it: a phone on a fixed mount + a stop-motion app at 12 shots/sec; AI generation can only approximate the jerky stop-motion feel — spell out stop-motion, 12fps in the prompt"
 
   - id: R21-film-footage
     layer: base
@@ -222,7 +222,7 @@ rules:
     route: [render.compose]
     prefer: [ffmpeg]
     verify: [perceptual_similarity]
-    why: 画面来自已有影视作品，复刻是找到原片对应片段再剪（版权属于片方，商用要授权）；不用原片时按同样景别、机位、打光自己拍，或用 AI 近似（R07）
+    why: "The footage comes from an existing film/show — remaking it means finding and cutting in the matching source clip (copyright belongs to the studio, commercial use needs licensing); without the original, shoot your own with the same framing, camera position, and lighting, or approximate with AI (R07)"
 
   - id: R16-dialogue-coupled
     layer: base
@@ -231,69 +231,69 @@ rules:
     prefer: [seedance-2.5, kling-3.0, veo-3.1, gemini-omni-flash, kling-4.0]
     verify: [lip_sync, speech_wer, identity_consistency]
 
-# ---------------------------------------------------------------- 音频路由
+# ---------------------------------------------------------------- Audio routing
 audio_rules:
   - id: A01-narration
-    when: 有旁白或口播
+    when: There's narration or a talking-head
     route: [analyze.asr_word_align, audio.voice_clone, audio.tts]
     prefer: [funasr-sensevoice, whisperx, minimax-speech-2.8, cosyvoice-3, qwen3-tts, elevenlabs-v3]
     verify: [speech_wer]
-    note: 中文优先用 MiniMax 克隆；英文情感优先用 ElevenLabs
+    note: For Chinese, prefer a MiniMax clone; for emotive English, prefer ElevenLabs
   - id: A02-fit-time-window
-    when: 新配音必须塞进原片时间窗（对口型、对画面）
+    when: New dubbing must fit exactly into the original time window (lip sync, matching the picture)
     route: [audio.tts_duration_control]
     prefer: [indextts-2]
     verify: [audio_duration_match, speech_wer]
   - id: A03-music
-    when: 有背景音乐
+    when: There's background music
     route: [analyze.audio_separation, analyze.beat_tempo, audio.music_gen]
     prefer: [demucs, librosa-madmom, lyria-3-pro, minimax-music-2.5]
     verify: [beat_alignment]
-    note: 不直接搬运原曲；生成 BPM 和情绪相近的新曲，或使用授权曲库。Suno 没有 API，只适合手动
+    note: Don't carry over the original track directly; generate a new one close in BPM and mood, or use a licensed library. Suno has no API, so it's only suitable for manual use
   - id: A04-sfx
-    when: 有动作音效或环境声
+    when: There are action sound effects or ambient sound
     route: [audio.v2a_foley, audio.sfx_gen]
     prefer: [hunyuanvideo-foley, elevenlabs-sfx]
     verify: [beat_alignment]
-    note: HunyuanVideo-Foley 的许可排除欧盟、英国、韩国；MMAudio 权重不能商用
+    note: HunyuanVideo-Foley's license excludes the EU, UK, and South Korea; MMAudio's weights can't be used commercially
   - id: A05-lip-mismatch
-    when: 生成画面的口型和新音频不同步
+    when: The generated footage's lip movement doesn't sync with the new audio
     route: [lipsync.redub]
     prefer: [sync-3, sync-react-1]
     verify: [lip_sync]
 
-# ---------------------------------------------------------------- 后期
+# ---------------------------------------------------------------- Post-production
 post_rules:
   - id: P01-upscale
-    when: 草稿分辨率低于交付分辨率
+    when: The draft resolution is lower than the delivery resolution
     route: [post.upscale]
     prefer: [seedvr2, flashvsr, topaz-video]
-    note: 不推荐 Real-ESRGAN 处理生成视频（有方块伪影）
+    note: Real-ESRGAN isn't recommended for generated video (introduces blocky artifacts)
   - id: P02-interp
-    when: 帧率不足或需要慢动作
+    when: Frame rate is insufficient or slow motion is needed
     route: [post.frame_interp]
     prefer: [rife, topaz-video]
 
-# ---------------------------------------------------------------- 成本与确认
+# ---------------------------------------------------------------- Cost and confirmation
 cost_policy:
-  - 每个生成单元先估算成本（时长 × usd_per_s），汇总后在 G1 由用户确认预算
-  - 先出关键帧图或试穿图（便宜），确认后再生成视频（贵）
-  - 先以 480p 或 720p 出草稿，确认后超分到交付分辨率（实测可以明显降本）
-  - 同一角色的多个镜头优先合并成一次多镜头生成（S01）
-  - 已产出的生成单元按（输入哈希 + 模型 + 参数）缓存，改写时只重跑受影响的单元
+  - Estimate the cost of each generation unit first (duration × usd_per_s); have the user confirm the total budget at G1
+  - Produce a keyframe image or try-on image first (cheap), confirm it, then generate video (expensive)
+  - Draft at 480p or 720p first, confirm it, then upscale to delivery resolution (measurably lowers cost)
+  - Prefer merging multiple shots of the same character into one multi-shot generation call (S01)
+  - Finished generation units are cached by (input hash + model + parameters); a rewrite only reruns the affected units
 
 confirm_gates:
-  G1: 需求、模式（fidelity/adapt）、预算与账号
-  G2: 分镜表 + 关键帧图 / 试穿图 / 首帧
-  G3: 低清草稿成片
-  G4: 超分成片与 scorecard
+  G1: Requirements, mode (fidelity/adapt), budget, and account
+  G2: Shot list + keyframe images / try-on images / first frames
+  G3: A low-resolution draft cut
+  G4: The upscaled final cut and scorecard
 
-# ---------------------------------------------------------------- 提示词纪律
-# 通用规则；各模型的具体写法在 prompting.yaml，两边不一致时以那边为准
+# ---------------------------------------------------------------- Prompt discipline
+# General rules; each model's specific writing style is in prompting.yaml — where they disagree, that file wins
 prompting_rules:
-  - 只写想要的内容；不写否定句（写 "no phone" 反而会画出手机）
-  - 写清"动作过程 + 结束状态"
-  - 每个输入标注职责：身份参考、商品事实、动作或运镜参考、声音参考、台词
-  - 避免比喻性措辞，模型会把比喻画成字面上的物体或事件
-  - 精确数量（手指比数字等）交给字幕或 MG，不要让模型表演
-  - 给表演一个可执行的态度，而不是罗列动作
+  - Write only what you want to appear; don't write a negative sentence ("no phone" tends to make a phone appear anyway)
+  - Spell out "the action, and the end state"
+  - Label each input's job: identity reference, product facts, motion/camera reference, audio reference, dialogue
+  - Avoid figurative language — the model will render a metaphor as a literal object or event
+  - Leave exact quantities (counting on fingers, etc.) to subtitles or motion graphics — don't make the model perform them
+  - Give the performance an actionable attitude, not a list of actions

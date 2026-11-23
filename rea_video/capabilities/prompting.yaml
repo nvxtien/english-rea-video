@@ -1,56 +1,56 @@
-# 各模型的提示词写法和关键帧要求
-# 按模型 id 索引（id 见 models/*.yaml）。给某个模型写复刻提示词时照这里改写：`rea-video models <id>`。
-# 内容来自厂商提示词指南和第三方指南，没有逐条实测；basis 标明主要来源，unverified 列出没核实或来源互相矛盾的地方。
-# 字段：structure 结构 / language 语言 / length 长度 / multi_shot 多镜头和时间 / references 参考素材怎么指代 /
-#       dialogue 台词和声音 / negatives 不想要的内容怎么写 / camera 运镜 / frame_mode 首帧、首尾帧模式下文字写什么 /
-#       frames 对帧图和参考图的要求 / rewriter 自动改写开关 / pitfalls 已知问题 / unverified 待核实 / sources 来源
+# Prompt-writing style and keyframe requirements per model
+# Indexed by model id (see models/*.yaml for ids). When writing a remake prompt for a given model, adapt it per this file: `rea-video models <id>`.
+# Content comes from vendor prompting guides and third-party guides, not individually verified against the model itself; `basis` states the main source, `unverified` lists anything not confirmed or where sources disagree.
+# Fields: structure / language / length / multi_shot (multiple shots and timing) / references (how to refer to reference material) /
+#         dialogue (dialogue and audio) / negatives (how to phrase what you don't want) / camera / frame_mode (what to write in first-frame / first-and-last-frame mode) /
+#         frames (requirements on frame images and reference images) / rewriter (auto-rewrite toggle) / pitfalls (known issues) / unverified / sources
 
-# ---------------------------------------------------------------- 关键帧通用做法
+# ---------------------------------------------------------------- General keyframe practice
 keyframes:
-  - 首帧模式下文字只写运动和运镜，不重复描述画面里已有的东西；重复描述会削弱运动（Runway、Google、Wan、混元、Kling、海螺的指南一致；Wan 3.0 例外，可以带剧情和台词）
-  - 首帧决定输出画幅的模型（Seedance 2.5、Wan）：帧图先裁到目标比例；首尾帧尺寸保持一致，否则尾帧会被拉伸或裁切
-  - 帧图分辨率不低于输出分辨率；避开淡入淡出、转场和运动模糊的帧；模糊的手和脸会在生成里被放大
-  - 帧里的字幕、花字、Logo、水印先擦掉再用，字和 Logo 后期再叠；小字一动就会变形
-  - 首帧选一个能接着动的姿势，动作到顶点的那一帧没有余地；镜头要推近就把首帧取宽一点，主体要往哪边走就在哪边留空
-  - 首尾帧保持同一构图和主体、只变一处；差得太远会被当成切镜或变形（Kling 官方：两帧尽量相似）。差别大的拆成两段
-  - 上一段尾帧接下一段首帧会逐次变糊，人脸最明显：接力次数尽量少，能回到原始清晰帧就回；接缝处前一段去掉末尾约 6 帧、后一段去掉第 1 帧（Seedance 官方）
-  - 人物参考：一张正脸特写加一张全身；Seedance 官方不建议用三视图 / 多视图
-  - 真人脸：Seedance 2.x 不收带真人脸的参考图和视频，原片抽出的真人帧不能直接用；Google Omni 不收部分可识别人物。按各平台的授权人像、虚拟人像或风格化角色的路走
-  - 分镜九宫格：先出一张网格图再逐格裁开放大，各自做图生视频；整张网格当首帧效果不稳，当参考图可以（Seedance 全能参考有官方示例）
+  - In first-frame mode, only write motion and camera work — don't re-describe what's already in the frame; re-describing it weakens the motion (Runway, Google, Wan, Hunyuan, Kling, and Hailuo's guides all agree; Wan 3.0 is the exception — it can include story and dialogue)
+  - For models where the first frame determines the output aspect ratio (Seedance 2.5, Wan): crop the frame image to the target ratio first; keep first and last frame sizes identical, or the last frame will be stretched or cropped
+  - Frame-image resolution should be no lower than the output resolution; avoid fades, transitions, and motion-blurred frames — a blurry hand or face will be exaggerated in generation
+  - Erase subtitles, styled text, logos, and watermarks from a frame before using it — text and logos go back in during post; small text deforms the moment it moves
+  - Pick a first frame in a pose that can continue moving — a frame at the peak of an action leaves no room to move. If the shot pushes in, frame the first frame wider; leave space on whichever side the subject is about to move toward
+  - Keep the same composition and subject between first and last frame, changing only one thing; too much difference gets read as a cut or causes deformation (Kling's own guidance: keep the two frames as similar as possible). Split anything with a big difference into two segments
+  - Chaining one segment's last frame into the next segment's first frame gets progressively blurrier, most visibly on faces: keep the number of relays as low as possible, and go back to a clean original frame whenever you can; at the seam, drop the last ~6 frames of the earlier segment and the first frame of the later one (Seedance's own guidance)
+  - Character reference: one front-facing close-up plus one full body shot; Seedance's own guidance advises against a three-view/multi-view reference
+  - Real faces: Seedance 2.x won't accept reference images or video containing a real face — a real-person frame pulled from the original can't be used as-is; Google Omni won't accept some recognizable people. Follow each platform's route for a licensed likeness, a virtual likeness, or a stylized character instead
+  - Storyboard grid: produce one grid image first, then crop and upscale each cell separately for its own image-to-video call; using the whole grid directly as a first frame is unstable, but it's fine as a reference image (Seedance's omni-reference has an official example of this)
 
-# ---------------------------------------------------------------- 视频模型
+# ---------------------------------------------------------------- Video models
 models:
   seedance-2.5:
     basis: vendor
     structure: >-
-      四块：素材指代 → 一句话概述（主体 + 地点 + 事件 + 题材 / 风格 + 特殊运镜）→ 具体情节（按时间戳或「镜头 N」分段，逐段写画面、运镜、动作、台词、音效）→ 结尾写全程不变的东西（机位、环境、声音、氛围）
-    language: 中文、英文都支持，官方没说哪个更好；台词语言要统一
-    length: 中文 500 字以内，英文 1000 词以内，超出会丢细节
+      Four parts: reference material labeling → a one-sentence overview (subject + location + event + genre/style + any special camera move) → the specific action (broken into segments by timestamp or "Shot N," with picture, camera work, action, dialogue, and sound effects per segment) → a closing line stating what stays constant throughout (camera position, environment, sound, mood)
+    language: Both Chinese and English are supported; the vendor doesn't say which is better — keep dialogue in one language
+    length: Up to 500 Chinese characters, or up to 1000 English words — going over loses detail
     multi_shot: >-
-      「镜头 N」或整数秒时间戳都可以：「0-3 秒…3-7 秒…」，首尾相接不留空；也认「第 2 秒…」「3 秒后…」。不要用时间戳写频率（「一秒摇头 3 次」）。转场写触发点和方式。时间戳是节奏参考，不是逐帧精确
+      Either "Shot N" or whole-second timestamps work: "0-3 seconds…3-7 seconds…", with no gaps between segments; "at second 2…" or "3 seconds later…" are also recognized. Don't use a timestamp to express a frequency ("shakes head 3 times per second"). For a transition, state the trigger point and method. Timestamps are a rhythm guide, not frame-exact
     references: >-
-      素材按类型和上传顺序编号：方舟 API 写「图片1 / 视频1 / 音频1」，即梦 App 用 @图片1，fal 用 @Image1。每个素材都要用文字说明它管什么，人多时列清单；可以写明不取什么（「不采用图片背景」）。资产库素材在提示词里仍写「图片1」，不写资产 ID。1–5 个主体最稳
+      Reference material is numbered by type and upload order: the Ark API uses "Image 1 / Video 1 / Audio 1," the Jimeng app uses @Image1, fal uses @Image1. State in words what each one is responsible for — list them out when there are several. You can also state what not to take from one ("don't use the image's background"). Asset-library material is still referred to as "Image 1" in the prompt, not by its asset ID. 1–5 subjects is most stable
     dialogue: >-
-      「角色台词（情绪）："内容"」，例如 男主播："…"；背景音乐写「背景音乐：…」。台词后面不要再跟语气、表情、动作说明，也不要复述台词，否则容易出字幕。中英文以外的台词先写语言（「女孩用日语轻声说：…」）。多人时写明谁说、谁闭嘴
+      "Character dialogue (emotion): \"content\"", e.g. the male host: "…"; background music is written as "Background music: …". Don't follow dialogue with tone/expression/action notes, and don't restate the dialogue — either tends to cause subtitles to appear. For dialogue in a language other than Chinese or English, state the language first ("the girl says softly in Japanese: …"). With multiple speakers, state who speaks and who stays silent
     negatives: >-
-      没有负面提示词字段。尽量正面描述；字幕和声音可以直接写「不要字幕」「无 bgm，只生成环境音和动作音」「不要任何声音」。BGM 禁令会漏，开头和结尾各写一遍，并列出同义词（BGM、配乐、氛围铺底音）
+      There's no negative-prompt field. Describe positively wherever possible; subtitles and sound can be addressed directly ("no subtitles," "no BGM, only generate ambient sound and action sound," "no sound at all"). A BGM ban can get missed — state it once at the start and once at the end, and list synonyms (BGM, soundtrack, ambient bed)
     camera: >-
-      直接用标准术语：大全景到特写；推、拉、摇、移、跟、环绕、俯冲、手持晃动；低角度、俯视、第一人称；一镜到底、希区柯克变焦、FPV、子弹时间。写明镜头是固定还是运动；固定写「固定镜头」。运镜和主体动作分成两句
+      Use standard terms directly: extreme wide to close-up; push, pull, pan, truck, track, orbit, swoop down, handheld shake; low angle, overhead, first-person; one continuous take, Hitchcock zoom, FPV, bullet time. State whether the camera is static or moving; write "static shot" for static. Keep camera movement and subject action as two separate sentences
     frame_mode: >-
-      要帧严格一致就用首帧 / 首尾帧模式（role=first_frame / last_frame），这时 ratio 只能是 adaptive，输出比例跟首帧，且不能再传参考图、视频、音频。要同时用参考素材就走全能参考，写「图片 3 为首帧，图片 5 为尾帧」，结果只是近似。多关键帧开头写「以图片 1 至图片 7 的顺序作为关键帧」。文字写接下来的运动、运镜和声音
-    frames: 宽高比 0.4–2.5，边长 300–6000 px，30 MB 以内；参考图分辨率不要高于输出分辨率；分镜图用简单线稿，图上少放文字
-    rewriter: API 没有改写开关
+      For strict frame control, use first-frame / first-and-last-frame mode (role=first_frame / last_frame) — in this mode `ratio` can only be adaptive, the output ratio follows the first frame, and you can no longer pass a reference image, video, or audio. To use reference material at the same time, go through omni-reference and write "Image 3 as the first frame, Image 5 as the last frame" — the result is only approximate. For multiple keyframes, open with "using Image 1 through Image 7, in order, as keyframes." The text describes the motion, camera work, and sound that follows
+    frames: Aspect ratio 0.4–2.5, side length 300–6000 px, under 30 MB; keep reference-image resolution no higher than the output resolution; use simple line art for storyboard images, with little text on them
+    rewriter: The API has no rewrite toggle
     pitfalls:
-      - 全能参考下，提示词里出现「编辑视频、增加、加上、删除、去掉、修改、替换、改成、延长、延续、续写」会被判成编辑或续写任务；普通复刻避开这些词，或设 omni_reference_task_type=reference
-      - 参考视频带字幕时生成结果容易出字幕
-      - 画面里的英文单词会拼错，把字母拆开写；中文错字就把文字做成参考图传入
-      - 强烈情绪词会让眼睛发光，换成温和的词
-      - 参考素材按角色出场顺序上传，否则角色会对错
-      - 30 秒的长镜头里，开头说一次的特征保持不住，在主要段落重复一遍；时间线留空的段落不受控
-      - 水、回声一类的词会让声音里出现水波噪声
+      - "Under omni-reference, words like \"edit the video, add, append, delete, remove, modify, replace, change to, extend, continue, keep going\" get read as an edit or continuation task; avoid these words for an ordinary remake, or set omni_reference_task_type=reference"
+      - A reference video with subtitles makes the result prone to generating subtitles too
+      - English words in the frame get misspelled — spell them out letter by letter; for a wrong Chinese character, pass the text in as a reference image instead
+      - Strongly emotional words make the eyes glow — use milder words instead
+      - Upload reference material in the order the characters appear, or characters get swapped
+      - In a 30-second long take, a trait stated only at the start doesn't hold — repeat it in the main section; a segment left blank on the timeline is uncontrolled
+      - Words like "water" or "echo" introduce watery noise into the audio
     unverified:
-      - 2.5 是否还认 2.0 的四种声音符号，各来源说法不一
-      - 最多能写几个镜头没有说明
+      - Whether 2.5 still recognizes 2.0's four audio notation symbols — sources disagree
+      - No stated limit on how many shots can be written
     sources:
       - https://ark.volcengine.com/region:cn-beijing/docs/seedance-2-5-prompt-guide
       - https://docs.volcengine.com/docs/82379/2607689
@@ -65,42 +65,42 @@ models:
   seedance-2.5-flash:
     basis: vendor
     structure: >-
-      官方只说写得简洁具体：主体、动作、运镜、画面风格，一次只写一个动作。没有单独的指南，按 Seedance 2.5 的写法（rea-video models seedance-2.5）
+      The vendor only says to write it concisely and specifically: subject, action, camera work, visual style, one action at a time. There's no separate guide — follow Seedance 2.5's style (rea-video models seedance-2.5)
     frame_mode: >-
-      和 2.5 一样分首尾帧模式和全能参考模式，两种不能混用
+      Same as 2.5: first/last-frame mode and omni-reference mode, which can't be mixed
     frames: >-
-      最高 720p；时长和参考数量上限没公布
+      Up to 720p; duration and reference-count limits aren't published
     unverified:
       - >-
-        Flash 是否和 2.5 一样认整数秒时间戳、四种声音符号的情况也未知
+        Whether Flash recognizes whole-second timestamps and the four audio notation symbols the same way 2.5 does is also unknown
     sources:
       - https://dreamina.capcut.com/seedance/seedance-2-5-flash
       - https://cellcog.ai/blog/seedance-2-5-flash/
 
   seedance-2.0:
     basis: vendor
-    structure: 精准主体 + 动作细节 + 场景环境 + 光影色调 + 镜头运镜 + 视觉风格 + 画质 + 约束条件
-    language: 中文、英文；台词语言统一，不要中英混用；不要整段贴剧本
-    length: 中文 500 字以内，英文 1000 词以内
+    structure: Precise subject + action detail + scene/environment + lighting and color + camera work + visual style + image quality + constraints
+    language: Chinese or English; keep dialogue in one language — don't mix, and don't paste in a whole script
+    length: Up to 500 Chinese characters, or up to 1000 English words
     multi_shot: >-
-      用「镜头 1 / 镜头 2 / 镜头 3」，每个镜头写运镜、动作、地点、声音。不要给镜头写秒数：官方说对精确时间的支持不稳定，硬限时长可能出异常。对话戏适合一镜到底，快动作拆成几段再拼
+      Use "Shot 1 / Shot 2 / Shot 3," writing camera work, action, location, and sound for each. Don't give a shot a specific second count — the vendor says precise timing support is unstable, and a hard duration limit can cause glitches. Dialogue scenes suit one continuous take; fast action is better split into segments and stitched together
     references: >-
-      先定义再复用：「将图片1中的…定义为主体1」，或简写「张三@图片1」，每个主体带 2–3 个稳定特征；最重要的参考放最前面。模板：「参考图片N中的主体N，生成…」「参考视频N中的动作 / 运镜 / 风格 / 音效，生成…」「参考音频N中的音色，生成…」。即梦全能参考可以写「@图片1 作为首帧，@视频1 参考镜头语言，@音频1 用于配乐」。建议 1–2 张人物图、1 张场景图、1 段运镜视频、1 段音频，不要塞满
+      Define, then reuse: "Define [X] in Image 1 as Subject 1," or shorthand "Zhang San @Image1" — give each subject 2–3 stable traits; put the most important reference first. Templates: "Referencing Subject N in Image N, generate…", "Referencing the action / camera work / style / sound effect in Video N, generate…", "Referencing the timbre in Audio N, generate…". Jimeng's omni-reference can say "@Image1 as the first frame, @Video1 for camera language reference, @Audio1 for the soundtrack." Suggested: 1–2 character images, 1 scene image, 1 camera-work video, 1 audio clip — don't overload it
     dialogue: >-
-      四种符号：音乐（背景中播放着…），音效 <远处传来狗叫声>，台词 {你好，世界}，字幕【第一章：启程】。其他语言写「用日语说道{…}」。指定音色写「使用@音频1…的音色说」，音色会有偏差
+      Four notations: music (Background music playing…), sound effect <a dog barking in the distance>, dialogue {Hello, world}, on-screen text 【Chapter 1: The Journey Begins】. For another language, write "says in Japanese {…}". To specify a voice, write "speaking in the timbre of @Audio1…" — the timbre will drift somewhat
     negatives: >-
-      没有负面提示词字段，约束写在末尾：「保持无字幕」「避免生成任何文字或字幕」「不要生成Logo」「不要生成水印」。官方承认做不到完全不出字幕，横屏比竖屏出得少
-    camera: 直接用标准运镜术语（中景、特写、全景、缓慢推镜、平稳横移、固定镜头）；一个镜头只指定一种运镜
+      There's no negative-prompt field — constraints go at the end: "keep it subtitle-free," "avoid generating any text or subtitles," "don't generate a logo," "don't generate a watermark." The vendor admits it can't fully suppress subtitles; landscape generates fewer than portrait
+    camera: Use standard camera-work terms directly (medium shot, close-up, wide shot, slow push-in, steady pan, static shot); specify only one camera move per shot
     frame_mode: >-
-      要严格保住首尾帧就用首尾帧模式（role=first_frame / last_frame），不能和参考素材同传；写「首帧为图片1」是宽松的替代。编辑或延长视频时直接写「视频N」，不要写「参考视频N」，否则会被当成参考任务
-    frames: 人物参考用大头照加全身照，不建议多视图；脸在图里太小会掉脸
-    rewriter: API 没有改写开关
+      For strict first/last-frame control, use first/last-frame mode (role=first_frame / last_frame) — can't be passed alongside reference material; writing "first frame is Image 1" is a looser alternative. When editing or extending a video, write "Video N" directly, not "reference Video N" — the latter gets treated as a reference task
+    frames: For character reference, use a head shot plus a full-body shot; multi-view isn't recommended; a face too small in the image gets lost
+    rewriter: The API has no rewrite toggle
     pitfalls:
-      - 容易出分身 / 双胞胎，末尾加一句全局禁止
-      - 多音字、生僻字、形近字会读错
-      - 写实参考图会把风格化画面拉回实拍
-      - 参考超过 4 个人时稳定性下降
-      - 反复续写后人脸会劣化
+      - Prone to generating doubles/twins — add a global ban sentence at the end
+      - Heteronyms, rare characters, and similar-looking characters get mispronounced
+      - A photorealistic reference image pulls a stylized scene back toward live action
+      - Stability drops with more than 4 reference people
+      - Repeated continuation degrades the face over time
     sources:
       - https://docs.volcengine.com/docs/82379/2222480
       - https://docs.volcengine.com/docs/ark/seedance-2-0?lang=zh
@@ -108,31 +108,31 @@ models:
     lint:
       max_cjk: 500
       forbid:
-        - {re: '镜头\s*\d+\s*[（(]\s*\d|从\s*\d+(\.\d+)?\s*秒起', why: Seedance 2.0 不要给镜头写秒数（官方说精确时间支持不稳定）}
+        - {re: '镜头\s*\d+\s*[（(]\s*\d|从\s*\d+(\.\d+)?\s*秒起', why: "Don't give Seedance 2.0 a specific second count for a shot (the vendor says precise timing support is unstable)"}
 
   kling-4.0:
     basis: vendor
     structure: >-
-      四块：[Asset Roles] 每个素材管什么 → [Overall Settings] 整体设定 → [Sequence of Events] 按时间写事件，再写运镜 → [Audio] 声音。先用一句话写清主体、场景、动作、情绪，再只补运镜、时间、声音和要保持不变的东西
-    language: 没有指定提示词语言；台词和画面文字支持中、英、日、韩、西、葡、德、法、印地语，中文方言和英语口音
-    length: 最多 8000 token
+      Four parts: [Asset Roles] what each asset is for → [Overall Settings] → [Sequence of Events] events written in time order, then camera work → [Audio]. First write one sentence stating the subject, scene, action, and mood clearly, then add only camera work, timing, sound, and what to keep constant
+    language: No specified prompt language; dialogue and on-screen text support Chinese, English, Japanese, Korean, Spanish, Portuguese, German, French, Hindi, Chinese dialects, and English accents
+    length: Up to 8000 tokens
     multi_shot: >-
-      默认自动分镜，没有开关。镜头直接写在提示词里：「Shot 1 (5s): …」或「0–3 seconds: …」。要一镜到底必须写明 No cuts。不收 3.0 那种结构化分镜字段
+      Auto-splits into shots by default, with no toggle. Write shots directly in the prompt: "Shot 1 (5s): …" or "0–3 seconds: …". For one continuous take, you must state "No cuts" explicitly. It doesn't accept the structured shot-list field that 3.0 has
     references: >-
-      素材按上传顺序编号：@Image1、@Video1、@Element1。每个素材配一句职责（"@Image1 defines the scene. Preserve its spatial layout, furnishings, and lighting."），只写编号不写职责结果不稳。学运镜和节奏写 "Use @Video1 as the reference for camera movements and shot pacing."。要改原视频写 "Edit @Video1"，并加 "Keep everything else unchanged"
-    dialogue: 台词用引号，按目标语言原文写，并描述说话人的年龄、语气、语速、情绪；声音放在 [Audio] 块里，分台词 / 旁白、环境声、音乐、音效。字幕只有明确要求才出
-    negatives: 官方说负面指令会增加出错；只保留两条必要的：不要字幕、不要背景音乐（要单镜头时再加不要切镜）
-    camera: 自然语言描述（push-in、pull-out、pan、tracking、orbit、handheld）；没有单独的运镜参数；可以从参考视频取运镜
+      Material is numbered by upload order: @Image1, @Video1, @Element1. Give each one a one-sentence role ("@Image1 defines the scene. Preserve its spatial layout, furnishings, and lighting.") — numbering alone with no stated role is unstable. To learn camera work and pacing, write "Use @Video1 as the reference for camera movements and shot pacing." To edit the original video, write "Edit @Video1," and add "Keep everything else unchanged"
+    dialogue: Put dialogue in quotes, written in the target language verbatim, with the speaker's age, tone, pace, and emotion described; put sound in the [Audio] block, split into dialogue/narration, ambient sound, music, and sound effects. Subtitles only appear if explicitly requested
+    negatives: The vendor says negative instructions increase errors; keep only two necessary ones — no subtitles, no background music (add no cuts too if a single shot is required)
+    camera: Natural-language description (push-in, pull-out, pan, tracking, orbit, handheld) — there's no separate camera-parameter field; camera work can also be taken from a reference video
     frame_mode: >-
-      关键帧模式最多 10 张（首、尾、中间任意时间）："Use @Image1 as the first frame and @Image2 as the last frame."，中间帧写「X–Y sec | Keyframe 1: 发生什么」。文字只写帧与帧之间的运动。关键帧模式不能加参考素材，和 Omni Reference 不能同用。昼夜这类大跳变拆成两段
-    frames: 画幅跟第一张关键帧；图片 30 MB 以内，宽高比 2:5–5:2
-    rewriter: 没有开关；很短的提示词会被模型自动扩写
+      Keyframe mode allows up to 10 images (first, last, or any time in between): "Use @Image1 as the first frame and @Image2 as the last frame.", with an in-between frame written as "X–Y sec | Keyframe 1: what happens". The text only describes the motion between frames. Keyframe mode can't take reference material added on top, and can't be combined with Omni Reference. Split a big jump (day to night, etc.) into two segments
+    frames: The output aspect ratio follows the first keyframe; images under 30 MB, aspect ratio 2:5–5:2
+    rewriter: No toggle; a very short prompt gets auto-expanded by the model
     pitfalls:
-      - 抽象词（premium look）没有效果
-      - 不写保持项，其他元素会跟着变
-      - 帧图里有字时加一句 "Do not redraw the letters."
+      - Abstract words (e.g. "premium look") have no effect
+      - Without a stated "keep constant" item, other elements will drift too
+      - If there's text in the frame image, add "Do not redraw the letters."
     unverified:
-      - 官方 API 的字段名和关键帧最小分辨率待核实
+      - The official API's field names and minimum keyframe resolution need confirming
     sources:
       - https://kling.ai/quickstart/kling-4-model-user-guide
       - https://www.krea.ai/models/kling-4/prompt-guide
@@ -141,41 +141,41 @@ models:
   kling-4.0-flash:
     basis: vendor
     structure: >-
-      和 Kling 4.0 同一套写法（rea-video models kling-4.0）：素材职责 → 整体设定 → 按时间写事件 → 声音
+      Same writing style as Kling 4.0 (rea-video models kling-4.0): asset roles → overall settings → events in time order → sound
     length: >-
-      最多 8000 token
+      Up to 8000 tokens
     multi_shot: >-
-      默认自动分镜；镜头直接写在提示词里（「Shot 1 (5s): …」）；fal 上用 multi_prompt 列表，总时长等于各镜之和
+      Auto-splits into shots by default; shots are written directly in the prompt ("Shot 1 (5s): …"); on fal, use the multi_prompt list, with total duration equal to the sum of the shots
     references: >-
-      @Image1、@Video1、@Element1，按上传顺序编号，每个素材配一句职责；fal 还有 @Voice1
+      @Image1, @Video1, @Element1, numbered by upload order, with a one-sentence role for each; fal also has @Voice1
     negatives: >-
-      只保留两条：不要字幕、不要背景音乐
+      Keep only two: no subtitles, no background music
     frame_mode: >-
-      只收首帧，不支持首尾帧和多关键帧；构图靠首帧或参考图锁
+      Only accepts a first frame — doesn't support first-and-last-frame or multiple keyframes; composition is locked via the first frame or a reference image
     sources:
       - https://kling.ai/quickstart/kling-4-model-user-guide
 
   kling-3.0:
     basis: third-party
-    structure: 没有固定公式；按 主体、动作、场景、运镜、光线、情绪 来写，示例顺序是 场景 → 主体 → 运镜 → 动作 → 台词
-    language: 中文、英文都可以；台词支持中、英、日、韩、西和方言口音
-    length: 整体 2500 字符以内；自定义分镜每个镜头 512 字符以内，超出被截断
+    structure: No fixed formula; write subject, action, scene, camera work, lighting, mood — the example order is scene → subject → camera work → action → dialogue
+    language: Both Chinese and English work; dialogue supports Chinese, English, Japanese, Korean, Spanish, and regional accents
+    length: Under 2500 characters overall; a custom shot is under 512 characters each — anything over gets truncated
     multi_shot: >-
-      API 用结构化分镜：shot_type=customize，multi_prompt 里每镜一条 {index, prompt, duration}，1–6 镜，时长加起来等于总时长（3–15 秒），这时顶层提示词不起作用。shot_type=intelligence 是模型自己分镜，可能只出一个镜头。写在提示词里用「[Shot 1: Wide shot] …」，先交代场景再按顺序列镜头
-    references: 主体（Element）在界面上绑定到首帧，首帧和首尾帧模式下最多 3 个；主体带了声音就不要在提示词里再设音色
+      The API uses a structured shot list: shot_type=customize, with one entry per shot in multi_prompt {index, prompt, duration}, 1–6 shots, durations summing to the total (3–15 seconds) — in this mode the top-level prompt has no effect. shot_type=intelligence lets the model split shots itself, and may only produce one shot. In the prompt itself, write "[Shot 1: Wide shot] …", establishing the scene first, then listing shots in order
+    references: Subjects (Elements) are bound to the first frame in the UI; up to 3 in first-frame or first-and-last-frame mode. If a subject already carries a voice, don't also set a timbre in the prompt
     dialogue: >-
-      「名字（语气，语言）："台词"」，例如 Mom (softly, in a surprised tone): "…"；旁白写 Voiceover (…):；方言写 said in Cantonese:。每个角色用固定的名字，不用代词；动作写在台词前；用 Immediately 这类连接词避免两句台词粘在一起。环境声写进场景句
-    negatives: 有独立的 negative_prompt 字段（2500 字符以内）；Turbo 版不认，写进提示词
-    camera: 自然语言（slow push-in、pan、tilt、tracking、dolly-in、handheld），一个镜头一种运镜
-    frame_mode: 把图当锚点，只写画面怎么变化；身份、布局、图里的文字会被保留
-    frames: JPEG / PNG 不带透明通道，边长 300–8000 px，宽高比 1:2.5–2.5:1，10 MB 以内；输出画幅跟输入图。Turbo 版不收尾帧和主体
-    rewriter: 没有改写开关；cfg_scale（默认 0.5）是唯一的遵循度控制
+      "Name (tone, language): \"dialogue\"", e.g. Mom (softly, in a surprised tone): "…"; narration is written as Voiceover (…):; a dialect is written as said in Cantonese:. Use a fixed name for each character, not a pronoun; write the action before the dialogue; use a connector like "Immediately" to keep two lines of dialogue from running together. Write ambient sound into the scene sentence
+    negatives: There's a dedicated negative_prompt field (under 2500 characters); the Turbo version doesn't recognize it — put it in the prompt instead
+    camera: Natural language (slow push-in, pan, tilt, tracking, dolly-in, handheld), one camera move per shot
+    frame_mode: Treat the image as an anchor, describing only how the picture changes; identity, layout, and in-image text are preserved
+    frames: JPEG/PNG without an alpha channel, side length 300–8000 px, aspect ratio 1:2.5–2.5:1, under 10 MB; the output ratio follows the input image. The Turbo version doesn't accept a last frame or subjects
+    rewriter: No rewrite toggle; cfg_scale (default 0.5) is the only adherence control
     pitfalls:
-      - 动作没有绑定到具名角色时会说错人
-      - 自动分镜可能塌成一个镜头
+      - An action not bound to a named character can get attributed to the wrong person
+      - Auto-split shots can collapse into a single shot
     unverified:
-      - 声音参考的写法（<<<voice_1>>>）只在非官方镜像里见到
-      - 自定义分镜能否和尾帧同用
+      - The voice-reference notation (<<<voice_1>>>) has only been seen in unofficial mirrors
+      - Whether custom shots can be combined with a last frame
     sources:
       - https://kling.ai/blog/kling-ai-prompt-guide
       - https://kling.ai/quickstart/klingai-video-3-model-user-guide
@@ -185,23 +185,23 @@ models:
   kling-o3:
     basis: vendor
     structure: >-
-      参考生成：[主体的细节描述] + [主体之间的互动 / 动作] + [环境或背景] + [光线、风格等视觉方向]
-    language: 中文、英文都可以
-    length: 2500 字符以内
+      Reference generation: [subject detail description] + [interaction/action between subjects] + [environment or background] + [lighting, style, and other visual direction]
+    language: Both Chinese and English work
+    length: Under 2500 characters
     multi_shot: >-
-      「Shot 1 (2s): Wide shot, @Boxer A and @Boxer B face off…」或「[00:00 - 00:02] Medium shot: … Audio: …」，总长 15 秒以内。带参考视频时只能用自动分镜；视频编辑不支持多镜头
+      "Shot 1 (2s): Wide shot, @Boxer A and @Boxer B face off…" or "[00:00 - 00:02] Medium shot: … Audio: …", total length under 15 seconds. With a reference video, only auto-split shots are available; video editing doesn't support multiple shots
     references: >-
-      App 里用 @Image1 或 @主体名（"@Alan walks in holding @Samoyed"）；官方 API 用 <<<image_1>>>、<<<element_1>>>、<<<video_1>>>，按数组顺序编号；fal 用 @Image1 / @Element1。模板："Take @Image1 as the start frame, take @Image2 as the end frame, 描述两帧之间的变化"；"Take @Image as the start frame. Generate a new video following the camera movement of the @Video"；"Based on @Video, generate the next shot: …"。同一份提示词里标记写法保持一种
+      In the app, use @Image1 or @SubjectName ("@Alan walks in holding @Samoyed"); the official API uses <<<image_1>>>, <<<element_1>>>, <<<video_1>>>, numbered by array order; fal uses @Image1 / @Element1. Templates: "Take @Image1 as the start frame, take @Image2 as the end frame, [describe the change between the two frames]"; "Take @Image as the start frame. Generate a new video following the camera movement of the @Video"; "Based on @Video, generate the next shot: …". Keep one notation style consistent within a single prompt
     dialogue: >-
-      台词写「@角色 says with a barely contained smile, "…"」或「Goro: "…"」；音效单独一行 Audio:。主体绑定了声音就不用再指定
-    negatives: API 有 negative_prompt 字段
-    camera: 自然语言；可以从参考视频取运镜
-    frame_mode: 用上面的首尾帧模板，文字写两帧之间的变化；只给尾帧不支持；超过 2 张图时不支持尾帧
-    frames: 图片 300 px 以上，10 MB 以内；不带视频时图片加主体最多 7 个，带视频时 4 个；视频 1 段，3–10 秒
-    rewriter: 没有找到开关
+      Write dialogue as "@Character says with a barely contained smile, \"…\"" or "Goro: \"…\""; put a sound effect on its own line as Audio:. If a subject already carries a voice, no need to set a timbre separately
+    negatives: The API has a negative_prompt field
+    camera: Natural language; camera work can also be taken from a reference video
+    frame_mode: Use the first/last-frame template above, with the text describing the change between the two frames; a last frame with no first frame isn't supported; a last frame isn't supported with more than 2 input images
+    frames: Images over 300 px, under 10 MB; up to 7 subjects across images without a video, 4 with a video; 1 video clip, 3–10 seconds
+    rewriter: No toggle found
     pitfalls:
-      - 传了参考视频就不能开原生音频
-      - 编辑模板："Add @Element to @Video" "Remove … from @Video" "Change @Video to … style"，和生成提示词是两种写法
+      - Passing a reference video disables native audio
+      - "Editing templates: \"Add @Element to @Video\" \"Remove … from @Video\" \"Change @Video to … style\" — a different style of writing from a generation prompt"
     sources:
       - https://kling.ai/quickstart/klingai-video-3-omni-model-user-guide
       - https://kling.ai/quickstart/klingai-video-o1-user-guide
@@ -210,27 +210,27 @@ models:
   veo-3.1:
     basis: vendor
     structure: >-
-      [Cinematography 镜头] + [Subject 主体] + [Action 动作] + [Context 环境] + [Style & Ambiance 风格氛围]；短片一条提示词只写一个集中的瞬间
-    language: 提示词用英文
-    length: 官方没给上限；经 Runway API 调用时 1000 字符
+      [Cinematography] + [Subject] + [Action] + [Context] + [Style & Ambiance]; for a short clip, one prompt should focus on a single moment
+    language: Write the prompt in English
+    length: No stated limit from the vendor; 1000 characters when called through the Runway API
     multi_shot: >-
-      每个镜头一行时间戳：「[00:00-00:02] …」，官方示例是 8 秒里 4 个 2 秒镜头，行内可带 SFX: 和 Emotion:。单段只能 4 / 6 / 8 秒
+      One timestamp line per shot: "[00:00-00:02] …" — the vendor's example is 4 two-second shots within 8 seconds, and a line can include SFX: and Emotion:. A single segment can only be 4, 6, or 8 seconds
     references: >-
-      没有标记语法，用句子说明："Using the provided images for the detective, the woman, and the office setting, create a medium shot of…"。最多 3 张，同一个人物 / 角色 / 商品；用参考图时只出 8 秒。Flow 里用 @ 指代
+      No notation syntax — describe it in a sentence: "Using the provided images for the detective, the woman, and the office setting, create a medium shot of…". Up to 3 images, for the same person/character/product; with reference images, only 8 seconds can be generated. Flow uses @ to refer to them
     dialogue: >-
-      「A woman says: My name is Clara.」——说话动作后加冒号、不加引号，官方把这个写法和避免画面出字绑在一起。声音单独成句：「SFX: thunder cracks in the distance」「Ambient noise: …」。一个镜头一个人说话，台词短，说话人面向镜头；多人对话拆成几段
-    negatives: 有独立的 negativePrompt 字段：只列名词（subtitles, captions, on-screen text），不写 no / don't
+      "A woman says: My name is Clara." — a colon after the speaking verb, no quotation marks; the vendor ties this notation to avoiding on-screen text. Sound stands on its own sentence: "SFX: thunder cracks in the distance", "Ambient noise: …". One speaker per shot, keep dialogue short, and have the speaker face the camera; split a multi-person conversation into several segments
+    negatives: There's a dedicated negativePrompt field — list only nouns (subtitles, captions, on-screen text), not "no/don't" phrasing
     camera: >-
-      static、pan、tilt、dolly、truck、pedestal、zoom、crane、aerial / drone、handheld、whip pan、arc；镜头语言 wide-angle、telephoto、shallow depth of field、rack focus
-    frame_mode: 图已经给了主体、场景、风格，文字只写运动；首尾帧模式写两帧之间的过渡和声音
-    frames: JPEG / PNG，20 MB 以内；画幅 16:9 或 9:16
-    rewriter: 有 enhancePrompt，默认开；3.1 能否关掉没核实
+      static, pan, tilt, dolly, truck, pedestal, zoom, crane, aerial/drone, handheld, whip pan, arc; lens language like wide-angle, telephoto, shallow depth of field, rack focus
+    frame_mode: The image already supplies the subject, scene, and style — the text only describes the motion; first/last-frame mode describes the transition and sound between the two frames
+    frames: JPEG/PNG, under 20 MB; aspect ratio 16:9 or 9:16
+    rewriter: There's an enhancePrompt toggle, on by default; whether 3.1 can disable it hasn't been verified
     pitfalls:
-      - 有台词时容易烧出乱码字幕：用冒号写法，并把 subtitles, captions 放进 negativePrompt
-      - 中文台词的口型成功率低（社区实测），这类镜头建议后期配音或口型重配
+      - Dialogue tends to burn in garbled subtitles — use the colon notation, and put subtitles, captions into negativePrompt
+      - Chinese-language lip sync has a low success rate (per community testing) — for these shots, dub or redub lip sync afterward instead
     unverified:
-      - 官方两份文档对台词用冒号还是引号说法相反，这里取冒号
-      - 预览版已从 Gemini API 下线，只剩 Vertex 上的正式版
+      - "Two official docs disagree on whether dialogue should use a colon or quotation marks — this entry goes with the colon"
+      - The preview has been removed from the Gemini API — only the Vertex release version remains
     sources:
       - https://cloud.google.com/blog/products/ai-machine-learning/ultimate-prompting-guide-for-veo-3-1
       - https://docs.cloud.google.com/vertex-ai/generative-ai/docs/video/video-gen-prompt-guide
@@ -240,59 +240,59 @@ models:
   grok-imagine-video-1.5:
     basis: vendor
     references: >-
-      按位置编号：<IMAGE_0>、<IMAGE_1>…，不是 @image；如果用 image 字段锁了首帧，它就是 <IMAGE_0>。声音是 <AUDIO_0> 到 <AUDIO_2>（预设音色）。每张参考图只给一个职责、在画面里一个固定位置；参考图多时人物少放、道具别动
+      Numbered by position: <IMAGE_0>, <IMAGE_1>… — not @image; if the `image` field locks a first frame, it's <IMAGE_0>. Sound is <AUDIO_0> through <AUDIO_2> (preset voices). Give each reference image one role and a fixed position in the frame; with many reference images, keep fewer people and leave props untouched
     frame_mode: >-
-      锁了首帧时提示词可以不写，写的话只写运动和运镜；要循环就把同一张图同时当首帧和尾帧
+      With a locked first frame, the prompt can be left empty — if written, it should only describe motion and camera work; for a loop, use the same image as both first and last frame
     dialogue: >-
-      声音默认开，generate_audio=false 关掉；台词写法官方没说明
+      Sound is on by default — disable it with generate_audio=false; dialogue notation isn't documented by the vendor
     frames: >-
-      关键帧最多 4 张，按 1/3 秒对齐，必须在片段内部；图生视频画幅跟输入图
+      Up to 4 keyframes, aligned to 1/3-second increments, which must fall inside the clip; image-to-video output ratio follows the input image
     sources:
       - https://docs.x.ai/developers/model-capabilities/video/reference-to-video
       - https://docs.x.ai/developers/model-capabilities/video/generation
 
   gemini-omni-flash:
     basis: vendor
-    structure: 没有公式，自然语言写清场景、运镜、光线、氛围
-    language: 英文（其他语言官方未评估）
-    length: 官方没给上限
+    structure: No formula — write the scene, camera work, lighting, and mood in natural language
+    language: English (other languages haven't been evaluated by the vendor)
+    length: No stated limit
     multi_shot: >-
-      默认会自己切镜；要单镜头必须写 "In a single continuous shot" 或 "No scene cuts"。时间码写「[0-5s] … [5-10s] …」，或自然语言 "After 3 seconds, …"。单段 3–15 秒。续写时 0 秒从续写部分开始算
+      Auto-splits into shots by default; for a single shot, you must write "In a single continuous shot" or "No scene cuts". Timecodes are written as "[0-5s] … [5-10s] …", or in natural language: "After 3 seconds, …". A single segment is 3–15 seconds. When continuing, 0 seconds starts from the continued part
     references: >-
-      用自然语言说明每张图的用途："The person shown in the reference image enters the scene" "Use the image as the first frame"。不要写 <FIRST_FRAME> 这类控制串（Google 已弃用；fal 上仍用 <IMAGE_REF_0>，按平台来）。最多 6 张参考图（每个角色 3 张、2 个角色），参考视频每段 3 秒以内，不收音频参考
+      State each image's purpose in natural language: "The person shown in the reference image enters the scene", "Use the image as the first frame". Don't use control strings like <FIRST_FRAME> (deprecated by Google; fal still uses <IMAGE_REF_0> — follow the platform). Up to 6 reference images (3 per character, 2 characters); a reference video segment under 3 seconds each; audio references aren't accepted
     dialogue: >-
-      台词同 Veo，用冒号不加引号；声音用句子描述："Sound design: gentle breeze… No dialogue." "Include calm background music"。画面里的文字用引号
-    negatives: 没有负面字段，直接在提示词里写短句："No dialogue" "No extra sound effects" "No scene cuts"
-    camera: 自然语言
-    frame_mode: 两张图是插值（3–10 秒），文字写过渡；首帧模式只写运动。编辑时提示词越短越好，加 "Keep everything else the same."
-    frames: 用高分辨率图；输出 16:9 或 9:16
-    rewriter: 没有找到开关
+      Dialogue follows the same style as Veo — colon, no quotation marks; describe sound in a sentence: "Sound design: gentle breeze… No dialogue.", "Include calm background music". On-screen text uses quotation marks
+    negatives: 'No negative field — write short sentences directly in the prompt: "No dialogue", "No extra sound effects", "No scene cuts"'
+    camera: Natural language
+    frame_mode: Two images are interpolated between (3–10 seconds), with text describing the transition; first-frame mode only describes motion. Keep an edit prompt as short as possible, adding "Keep everything else the same."
+    frames: Use high-resolution images; output is 16:9 or 9:16
+    rewriter: No toggle found
     pitfalls:
-      - 不收部分可识别人物的上传
-      - 描述过细的编辑提示词会带来额外改动
+      - Won't accept an upload showing a partially recognizable person
+      - An overly detailed edit prompt introduces extra unwanted changes
     sources:
       - https://aistudio.google.com/docs/omni
       - https://docs.cloud.google.com/vertex-ai/generative-ai/docs/video/best-practice
 
   vidu-q3:
     basis: third-party
-    structure: 主体 / 场景 + 场景描述 + 环境描述 + 画风 / 媒介；用自然的句子，主体少一点，关键风格词可以重复
-    language: 没有指定；语音输出支持中、英、日
-    length: 文生、图生、首尾帧 20000 字符以内（Turbo 文生 5000）；参考生视频 5000
-    multi_shot: 支持智能切镜，没有分镜字段也没有官方写法，用句子说明在哪里切
+    structure: Subject/scene + scene description + environment description + art style/medium; use natural sentences, fewer subjects, and key style words can be repeated
+    language: Not specified; voice output supports Chinese, English, and Japanese
+    length: Up to 20000 characters for text-to-video, image-to-video, and first/last-frame (5000 for Turbo text-to-video); 5000 for reference-to-video
+    multi_shot: Supports intelligent auto-split; no shot-list field and no official writing style — describe where to cut in a sentence
     references: >-
-      主体模式：每个主体有名字和最多 3 张图，提示词里用 @主体名 指代，最多 7 个主体。直接传图时按顺序说明："Image 1 is [scene]; Image 2 is [character]; Image 3 is [prop]"
+      Subject mode: each subject has a name and up to 3 images, referred to in the prompt as @SubjectName, up to 7 subjects. When passing images directly, describe them in order: "Image 1 is [scene]; Image 2 is [character]; Image 3 is [prop]"
     dialogue: >-
-      没有官方格式。第三方建议：台词每句 5–9 个词，标点干净；音效写 "SFX: …"；配乐写节奏或风格
-    negatives: 没有负面字段
-    camera: pan、tilt、zoom、static、orbit、FPV、aerial；一个镜头一种运镜
-    frame_mode: 只写运动和运镜
-    frames: 首尾帧分辨率之比要在 0.8–1.25 之间；图片 50 MB 以内，宽高比不超过 1:4 / 4:1；参考图 128×128 以上
-    rewriter: 图生视频的 is_rec 保持 false，开了模型会忽略你的提示词自己写
+      No official format. Third-party advice: 5–9 words per line of dialogue, clean punctuation; write sound effects as "SFX: …"; describe the soundtrack by rhythm or style
+    negatives: No negative field
+    camera: pan, tilt, zoom, static, orbit, FPV, aerial; one camera move per shot
+    frame_mode: Describe only motion and camera work
+    frames: The first/last-frame resolution ratio must be between 0.8–1.25; images under 50 MB, aspect ratio no more extreme than 1:4/4:1; reference images at least 128×128
+    rewriter: Keep is_rec false for image-to-video — enabled, the model ignores your prompt and writes its own
     pitfalls:
-      - 一口气的长台词或嘴被遮挡时口型会漂
+      - Lip sync drifts on a long unbroken line of dialogue or when the mouth is obscured
     unverified:
-      - 没有官方的 Q3 提示词指南，结构和台词建议来自第三方
+      - There's no official Q3 prompting guide — the structure and dialogue advice here come from third parties
     sources:
       - https://platform.vidu.com/docs/api-reference/video-models/vidu-q3/reference-to-video
       - https://platform.vidu.com/docs/api-reference/video-models/vidu-q3/image-to-video
@@ -302,19 +302,19 @@ models:
   vidu-q4-preview:
     basis: vendor
     structure: >-
-      官方没有提示词指南。第三方建议按时间分段：0–4 秒交代场景，4–10 秒动作，10–16 秒反应；每段写景别、运镜、台词和声音
+      No official prompting guide. Third-party advice is to split by time: 0–4 seconds establishes the scene, 4–10 seconds is the action, 10–16 seconds is the reaction; write shot size, camera work, dialogue, and sound for each segment
     length: >-
-      20000 字符以内
+      Up to 20000 characters
     multi_shot: >-
-      会自动切镜，没有分镜字段和官方写法
+      Auto-splits into shots; no shot-list field and no official writing style
     references: >-
-      参考生视频 1–15 张图加 0–3 段声音（mp3，3–12 秒）。文档写 [@主体名]、示例用 @1 / @2，但同时说暂不支持主体调用，确切写法没核实
+      Reference-to-video takes 1–15 images plus 0–3 audio clips (mp3, 3–12 seconds). The docs mention [@SubjectName], examples use @1/@2, but also say subject-referencing isn't supported yet — the exact notation is unverified
     frame_mode: >-
-      图生视频只收一张图，提示词可以不写
+      Image-to-video only accepts one image; the prompt can be left blank
     frames: >-
-      png / jpeg / webp，50 MB 以内（请求体 20 MB 以内）；参考模式画幅 1:1、9:16、16:9、3:4、4:3
+      png/jpeg/webp, under 50 MB (request body under 20 MB); reference mode supports aspect ratios 1:1, 9:16, 16:9, 3:4, 4:3
     rewriter: >-
-      图生视频的 is_rec 默认是 true，会用系统推荐的提示词替换你写的；要用自己的提示词必须设为 false
+      For image-to-video, is_rec defaults to true and replaces your prompt with a system-recommended one — set it to false to use your own prompt
     sources:
       - https://platform.vidu.com/docs/api-reference/video-models/vidu-q4-preview/image-to-video
       - https://platform.vidu.com/docs/api-reference/video-models/vidu-q4-preview/reference-to-video
@@ -322,22 +322,22 @@ models:
 
   pixverse-v6:
     basis: vendor
-    structure: 三句：第一句 主体 + 动作 + 地点；第二句 运镜 + 风格；第三句 约束。核心动作放最前
-    language: 什么语言都收，建议英文
-    length: 50–80 个词起步；fal 上限 2048 字节（中文一个字占 3 字节）
-    multi_shot: 多镜头是一个开关（generate_multi_clip_switch），没有分镜字段；提示词用 "Start with… Cut to… Shift to… End with…" 分段，最后加一句一致性约束（"Preserve the same warm color grade across all shots"）。首尾帧过渡、续写、融合模式下不能开
-    references: 融合模式用 @Subject1–8、@Background1–2、@Video1–2，每个标记都要对应一份传入的参考，否则请求被拒；带参考视频时输出长度跟视频
+    structure: Three sentences — the first is subject + action + location; the second is camera work + style; the third is constraints. Put the core action first
+    language: Accepts any language, English recommended
+    length: At least 50–80 words; fal's limit is 2048 bytes (one Chinese character counts as 3 bytes)
+    multi_shot: Multiple shots is a single toggle (generate_multi_clip_switch), with no shot-list field; structure the prompt with "Start with… Cut to… Shift to… End with…", ending with one consistency constraint sentence ("Preserve the same warm color grade across all shots"). Can't be enabled in first/last-frame transition, continuation, or fusion mode
+    references: Fusion mode uses @Subject1–8, @Background1–2, @Video1–2 — every notation must correspond to a supplied reference, or the request is rejected; with a reference video, the output length follows the video
     dialogue: >-
-      没有官方台词格式；音效和环境声用简短的 "Audio: …" 行。第三方认为它的声音以环境音为主，台词放后期
-    negatives: App 里所有文字都当正面指令，写 no X 反而强化 X，改成正面约束（"camera stays steady"）；部分 API 平台有 negative_prompt 字段
-    camera: 自然语言，一个主运镜加一个质感词；叠多个运镜会抖
-    frame_mode: 不重复描述图，写运动、运镜和一条一致性规则；首尾帧过渡加一句什么保持不动，两帧要是同一个连续主体
-    rewriter: thinking_type（enabled / disabled / auto）是提示词优化开关，按需要显式选
+      No official dialogue format; write sound effects and ambient sound as a short "Audio: …" line. Third parties say its audio leans toward ambient sound, with dialogue left for post
+    negatives: In the app, all text is treated as a positive instruction — writing "no X" actually reinforces X; rephrase as a positive constraint ("camera stays steady") instead. Some API platforms have a negative_prompt field
+    camera: Natural language, one primary camera move plus one texture word; stacking multiple camera moves causes shakiness
+    frame_mode: Don't re-describe the image — write the motion, camera work, and one consistency rule; for a first/last-frame transition, add one sentence on what stays unchanged, and the two frames need to show the same continuous subject
+    rewriter: thinking_type (enabled / disabled / auto) is the prompt-optimization toggle — set it explicitly as needed
     pitfalls:
-      - cinematic、fast、epic 这类词没有控制作用
-      - 长提示词靠后的细节会丢
+      - Words like cinematic, fast, epic have no controlling effect
+      - Detail placed late in a long prompt gets lost
     unverified:
-      - 官方平台文档打不开，参数来自第三方
+      - The vendor's own platform docs couldn't be opened — parameters come from third parties
     sources:
       - https://pixverse.ai/en/blog/ai-video-prompt-guide-7-tested-fixes
       - https://runware.ai/docs/models/pixverse-v6/guides/multi-shot-storytelling
@@ -346,25 +346,25 @@ models:
   minimax-h3:
     basis: vendor
     structure: >-
-      分字段写：integrated_multimodal_description:（画面和动作）→ overall_soundscape:（环境声和音效，1–4 句）→ non_diegetic_music:（配乐的乐器和速度，1–3 句，没有写 N/A）。两个声音字段不要留空，留空容易出多余的人声
-    language: 提示词用英文；台词和画面文字保留原语言
-    length: 7000 字符以内
+      Written as separate fields: integrated_multimodal_description: (the picture and action) → overall_soundscape: (ambient sound and sound effects, 1–4 sentences) → non_diegetic_music: (the soundtrack's instrumentation and tempo, 1–3 sentences, N/A if none). Don't leave the two sound fields empty — an empty field tends to introduce unwanted voice
+    language: Write the prompt in English; keep dialogue and on-screen text in their original language
+    length: Under 7000 characters
     multi_shot: >-
-      「[Shot 1] …」不带时间；后面的镜头写「[Shot 2] At 00:03.500, the camera cuts to...」，用单个递增的时间点，不用时间段。叠化和淡入淡出只在需要时写
+      "[Shot 1] …" with no timestamp; later shots are written as "[Shot 2] At 00:03.500, the camera cuts to...", using a single increasing point in time, not a time range. Write a dissolve or fade only when actually needed
     references: >-
-      标记 <Subject N>、<Picture N>、<Video N>、<Audio N>；参考生成的提示词分六段：subject_definitions、summary、retention_analysis、detailed_description、overall_soundscape、non_diegetic_music，并标明保留程度（fully_preserved / partially_preserved / attribute_transfer / weak_reference）。托管 API 也收白话写法（"following the motion in reference video 1"）
+      Notation: <Subject N>, <Picture N>, <Video N>, <Audio N>; a reference-generation prompt is split into six sections — subject_definitions, summary, retention_analysis, detailed_description, overall_soundscape, non_diegetic_music — stating a retention level (fully_preserved / partially_preserved / attribute_transfer / weak_reference) for each. The hosted API also accepts plain language ("following the motion in reference video 1")
     dialogue: >-
-      说话人编号 (S1)、(S2)，台词放在 <d>[English] I get off at the next station.</d> 里，语气和动作写在标签外；旁白写 "says in an off-screen voiceover" 并说明嘴闭着。英文双引号在这里表示画面上的文字，不是台词。台词里不要用省略号
-    negatives: 没有负面字段；列禁止项会把这些概念带进画面，用正面描述
-    camera: 自然语言
+      Speakers are numbered (S1), (S2); dialogue goes inside <d>[English] I get off at the next station.</d>, with tone and action written outside the tag; narration is written "says in an off-screen voiceover" with a note that the mouth stays closed. English double quotes here mean on-screen text, not dialogue. Don't use an ellipsis inside dialogue
+    negatives: No negative field; listing a banned concept tends to bring it into the frame — describe positively instead
+    camera: Natural language
     frame_mode: >-
-      第一行写对齐句，再空一行：图生视频 "For the target video, at 0.00 seconds into the target video, <Picture 1> (from [Shot 1]) is fully referenced."；首尾帧把 <Picture N> 对到具体秒数。帧模式和参考模式不能混用
-    frames: 图片边长 256–5760 px，宽高比 0.4–2.5，30 MB 以内；参考最多 9 图、3 段视频（共 15 秒）、3 段音频
-    rewriter: 只有 H3 Max 有 prompt_expansion_mode（disabled / balanced / quality），要精确控制就设 disabled
+      The first line is an alignment statement, followed by a blank line: for image-to-video, "For the target video, at 0.00 seconds into the target video, <Picture 1> (from [Shot 1]) is fully referenced."; for first/last-frame, map each <Picture N> to a specific second. Frame mode and reference mode can't be mixed
+    frames: Image side length 256–5760 px, aspect ratio 0.4–2.5, under 30 MB; up to 9 reference images, 3 video clips (15 seconds total), 3 audio clips
+    rewriter: Only H3 Max has prompt_expansion_mode (disabled / balanced / quality) — set it to disabled for precise control
     pitfalls:
-      - 带音频参考时容易说错人，把台词绑到看得见的动作上
+      - With an audio reference, it's prone to mixing up who's speaking — tie dialogue to a visible action
     unverified:
-      - 托管 API 是否必须用分字段格式（fal 的示例是普通段落）
+      - Whether the hosted API requires the separate-field format (fal's examples use ordinary paragraphs)
     sources:
       - https://huggingface.co/MiniMaxAI/MiniMax-H3/raw/main/docs/VIDEO_PROMPT_WRITING_GUIDE_base_en.md
       - https://huggingface.co/MiniMaxAI/MiniMax-H3/raw/main/docs/VIDEO_PROMPT_WRITING_GUIDE_ref_en.md
@@ -375,27 +375,27 @@ models:
       max_chars: 7000
       require: ["overall_soundscape:", "non_diegetic_music:"]
       forbid:
-        - {re: '\d+(\.\d+)?\s*[-–~]\s*\d+(\.\d+)?\s*s\b', why: 镜头时间要写单个时间点（At 00:03.500），不写时间段}
+        - {re: '\d+(\.\d+)?\s*[-–~]\s*\d+(\.\d+)?\s*s\b', why: "Write a shot's time as a single point (At 00:03.500), not a range"}
 
   minimax-h3-max:
     basis: vendor
     structure: >-
-      和 MiniMax H3 同一套写法（rea-video models minimax-h3）
+      Same writing style as MiniMax H3 (rea-video models minimax-h3)
     length: >-
-      7000 字符以内
+      Under 7000 characters
     references: >-
-      没有标记语法，用白话写：Video 1、Image 2、Audio 3，「Voice timbre follows reference audio 1」
+      No notation syntax — written in plain language: Video 1, Image 2, Audio 3, "Voice timbre follows reference audio 1"
     frame_mode: >-
-      首帧 / 尾帧和参考素材不能同传；视频和音频只能在参考模式下用
+      First/last frame can't be passed together with reference material; video and audio can only be used in reference mode
     frames: >-
-      参考图 256–5760 px、宽高比 0.4–2.5、30 MB 以内；参考视频 2–15 秒（共 15 秒以内）；参考音频 2–15 秒；t2v 要指定画幅，i2v 跟首帧
+      Reference images 256–5760 px, aspect ratio 0.4–2.5, under 30 MB; reference video 2–15 seconds (15 seconds total); reference audio 2–15 seconds; t2v requires specifying the aspect ratio, i2v follows the first frame
     rewriter: >-
-      extra.prompt_expansion_mode：disabled / balanced（默认）/ quality；要精确控制设 disabled
+      extra.prompt_expansion_mode: disabled / balanced (default) / quality — set to disabled for precise control
     pitfalls:
       - >-
-        时长只能 5–15 秒，4 秒会报错
+        Duration can only be 5–15 seconds — 4 seconds errors out
       - >-
-        只给尾帧行不行，文档前后说法矛盾，尾帧和首帧一起给
+        Whether a last frame alone (no first frame) works is unclear — the docs disagree with themselves; give both together
     sources:
       - https://platform.minimax.io/docs/api-reference/video-generation-v2-create
     lint:
@@ -403,62 +403,62 @@ models:
       max_chars: 7000
       require: ["overall_soundscape:", "non_diegetic_music:"]
       forbid:
-        - {re: '\d+(\.\d+)?\s*[-–~]\s*\d+(\.\d+)?\s*s\b', why: 镜头时间要写单个时间点（At 00:03.500），不写时间段}
+        - {re: '\d+(\.\d+)?\s*[-–~]\s*\d+(\.\d+)?\s*s\b', why: "Write a shot's time as a single point (At 00:03.500), not a range"}
 
   pika-h3-flex:
     basis: vendor
     structure: >-
-      按播放顺序写：画面和场景 → 谁在哪 → 每个动作以及它怎么结束
+      Written in playback order: the picture and scene → who's where → each action and how it ends
     language: >-
-      场景用英文写；台词和画面文字保留目标语言
+      Write the scene in English; keep dialogue and on-screen text in the target language
     length: >-
-      8000 字符以内
+      Under 8000 characters
     multi_shot: >-
-      镜头编号加开始时间：「[Shot 2] at 00:04」；只在有新内容时切；每个节拍一个运镜、一个动作
+      Shot number plus start time: "[Shot 2] at 00:04"; only cut when there's genuinely new content; one camera move and one action per beat
     references: >-
-      @Image1、@Video1、@Audio1，每个写明职责和跟随程度；不能只给音频参考
+      @Image1, @Video1, @Audio1, each with its role and how closely to follow it stated; an audio reference alone isn't accepted
     dialogue: >-
-      台词用引号，写明谁说、怎么说；画外音写明在画外，画面里的人嘴闭着；画面文字用引号原文写，并加 "No other text"；声音和音乐各占一行，或写 "No music" / "No speech"
+      Put dialogue in quotes, stating who's speaking and how; note explicitly when it's off-screen, with the on-screen person's mouth closed; on-screen text goes in quotes verbatim with "No other text" added; put sound and music on their own line, or write "No music" / "No speech"
     negatives: >-
-      用明确的禁止句，例如 "NO slow motion"
+      Use explicit prohibitions, e.g. "NO slow motion"
     camera: >-
-      每个运镜写距离和速度；推镜（push-in）不是变焦（zoom）
+      State distance and speed for each camera move; a push-in isn't a zoom
     frame_mode: >-
-      让模型保持首帧画面里的东西，再写接下来发生什么；有尾帧时写一个连续的动作，正好落到尾帧
+      Have the model keep what's in the first frame, then describe what happens next; with a last frame, write one continuous action that lands exactly on it
     rewriter: >-
-      可选，由 Pika 托管
+      Optional, hosted by Pika
     sources:
       - https://pika.art/learn/pika-h3-flex-prompt-guide
 
   heygen-video-1:
     basis: vendor
     structure: >-
-      官方没有提示词指南；基于 MiniMax H3，可以参考 H3 的写法（rea-video models minimax-h3）
+      No official prompting guide; built on MiniMax H3 — follow H3's style (rea-video models minimax-h3)
     length: >-
-      16000 字符以内
+      Under 16000 characters
     dialogue: >-
-      提示词里用引号写台词时，duration 设 auto 会按台词长度定时长
+      When dialogue is written in quotes in the prompt, setting duration to auto sizes the duration to the dialogue length
     rewriter: >-
-      prompt_enhancement：turbo / quality / ultraquality / disabled；要精确控制设 disabled，但超过 15 秒必须开
+      prompt_enhancement: turbo / quality / ultraquality / disabled — set to disabled for precise control, though it must be on for anything longer than 15 seconds
     sources:
       - https://developers.heygen.com/reference/create-heygen-video.md
 
   hailuo-2.3:
     basis: vendor
-    structure: 官方没有公式；常用顺序是 景别 / 运镜 → 主体 → 动作 → 场景 / 光线，一段 6 秒只写一个动作节拍
-    language: 没有说明
-    length: 2000 字符以内
-    multi_shot: 不支持，一次一个镜头，多镜头拆成多次生成
-    references: 不支持参考素材
-    dialogue: 没有音频，台词和音效不要写进提示词
-    negatives: 没有负面字段
+    structure: No official formula; the common order is shot size/camera work → subject → action → scene/lighting — a 6-second segment should have only one action beat
+    language: Not specified
+    length: Under 2000 characters
+    multi_shot: Not supported — one shot per call, split multiple shots into multiple generations
+    references: Doesn't support reference material
+    dialogue: No audio — don't write dialogue or sound effects into the prompt
+    negatives: No negative field
     camera: >-
-      用方括号指令，拼写固定：[Truck left] [Truck right] [Pan left] [Pan right] [Push in] [Pull out] [Pedestal up] [Pedestal down] [Tilt up] [Tilt down] [Zoom in] [Zoom out] [Shake] [Tracking shot] [Static shot]。同一个括号里的指令同时生效（[Pan left,Pedestal up]，最多 3 个），分开的括号按顺序执行
-    frame_mode: 不重复描述图，只写运动和运镜，并写明什么保持不动
-    frames: 只收首帧，没有尾帧；JPG / PNG / WebP，20 MB 以内，短边 300 px 以上，宽高比 2:5–5:2
-    rewriter: prompt_optimizer 默认开，用方括号指令或要精确控制时设为 false
+      Use square-bracket directives with fixed wording: [Truck left] [Truck right] [Pan left] [Pan right] [Push in] [Pull out] [Pedestal up] [Pedestal down] [Tilt up] [Tilt down] [Zoom in] [Zoom out] [Shake] [Tracking shot] [Static shot]. Directives inside the same bracket apply together ([Pan left,Pedestal up], up to 3); separate brackets execute in order
+    frame_mode: Don't re-describe the image — write only motion and camera work, stating what stays still
+    frames: Only accepts a first frame, no last frame; JPG/PNG/WebP, under 20 MB, short side over 300 px, aspect ratio 2:5–5:2
+    rewriter: prompt_optimizer is on by default — set to false when using square-bracket directives or needing precise control
     pitfalls:
-      - 时长只有 6 或 10 秒（1080P 只有 6 秒）
+      - Duration is only 6 or 10 seconds (1080P is 6 seconds only)
     sources:
       - https://platform.minimax.io/docs/api-reference/video-generation-t2v
       - https://platform.minimax.io/docs/api-reference/video-generation-i2v
@@ -467,25 +467,25 @@ models:
   wan-3.0:
     basis: vendor
     structure: >-
-      [总体描述] + [参考素材引用：图 N / 视频 N / 音频 N] + [分镜 N（起-止秒）：主体 + 场景 + 运动 + 美学控制] + [台词：xx 说："xxxx"] + [音效 / BGM] + [风格 / 情绪] + [负向清单]，写不到的板块直接跳过
-    language: 中文、英文
-    length: 20000 字符以内
+      [Overall description] + [reference-material references: Image N / Video N / Audio N] + [Shot N (start–end seconds): subject + scene + motion + aesthetic controls] + [Dialogue: xx says: "xxxx"] + [sound effects / BGM] + [style/mood] + [negative list] — skip any section you have nothing to write
+    language: Chinese, English
+    length: Under 20000 characters
     multi_shot: >-
-      「第1个镜头[0-3秒]… 第2个镜头[4-6秒]硬切转场，固定机位，…」；[起-止] 和（起-止）都可以，全篇用一种；各镜头首尾相接，每段 2–5 秒。段尾写「硬切转场」「叠化转场」，或下一段开头写「从上一分段的最后一帧无缝衔接」。要单镜头写「生成单镜头」。不要写模型控制不了的高频动作
+      "Shot 1 [0-3 seconds]… Shot 2 [4-6 seconds] hard cut, static camera, …"; either [start-end] or (start-end) is fine, but pick one style for the whole prompt — shots run back to back, each segment 2–5 seconds. End a segment with "hard cut" or "cross-dissolve," or open the next with "seamlessly continuing from the previous segment's last frame." For one continuous shot, write "generate a single shot." Don't ask for high-frequency motion the model can't control
     references: >-
-      「图1 / 视频1 / 音频1」（英文 Image 1 / Video 1，字母和数字之间有空格），图和视频分开编号。说明各自管什么：「将军形象参考图1，面部神态参考图2…音色参考音频1」「参考视频的运镜方式」「仅参考图2的色调与光影，不参考人物」。最多 10 图、5 段视频、5 段音频
+      "Image 1 / Video 1 / Audio 1" (in English: Image 1 / Video 1 / Audio 1, with a space between the word and number), images and videos numbered separately. State what each one does: "General's likeness reference Image 1, facial expression reference Image 2 …voice reference Audio 1", "camera-work style reference video", "only reference Image 2's color and lighting, not the person." Up to 10 images, 5 video clips, 5 audio clips
     dialogue: >-
-      「角色 + 说话动词 + 冒号 + 引号内容」：图1说："…"；图2回答："…"；画外音："…"。可以加情绪、语调、语速、音色、口音。不写台词模型会自己加，不要就写「无台词」「无背景音乐」。音色参考写一次对该角色全部台词生效；要对口型写「口型同步」
-    negatives: 写在提示词末尾的「负向清单：无字幕水印…」，只写不想出现的，没有就留空，不要重复正向已经写明的
+      "Character + speaking verb + colon + quoted content": Image 1 says: "…"; Image 2 replies: "…"; off-screen voice: "…". You can add emotion, tone, pace, timbre, accent. Without stated dialogue the model adds its own — write "no dialogue," "no background music" if you don't want any. A voice reference stated once applies to that character's whole dialogue; for lip sync write "lip sync"
+    negatives: 'Written at the end of the prompt as "negative list: no subtitles, no watermark…" — list only what you don''t want, leave it blank if there''s nothing, and don''t repeat what''s already stated positively'
     camera: >-
-      说大白话：推近、拉远、环绕、手持跟拍；固定写「固定镜头，摄影机静止，机位不变」；镜头写「85mm 长焦，浅景深」「24mm 广角，深焦」；慢动作写「高速摄影（1000fps 慢动作）」
-    frame_mode: 首帧 / 首尾帧模式下可以写动态过程、剧情、台词和运镜，也可以分时间段；两帧差别大时写清变化过程。首尾帧和参考素材不能同传，首尾帧模式不收音频
-    frames: 输出画幅跟首帧，要 3:4 就传 3:4 的首帧
-    rewriter: prompt_extend 默认开；已经按上面结构写好的提示词建议关掉；带文件或链接输入时强制开启
+      Use plain language: push in, pull back, orbit, handheld follow; write "static shot, camera perfectly still, no change in position" for static; lens as "85mm telephoto, shallow depth of field" or "24mm wide-angle, deep focus"; slow motion as "high-speed photography (1000fps slow motion)"
+    frame_mode: In first-frame/first-and-last-frame mode you can write the motion process, story, dialogue, and camera work, and split it by time segment; when the two frames differ a lot, describe the process of change clearly. First/last frame and reference material can't be passed together; first/last-frame mode doesn't accept audio
+    frames: The output aspect ratio follows the first frame — pass a 3:4 first frame to get 3:4 output
+    rewriter: prompt_extend is on by default — turn it off for a prompt already written in the structure above; it's forced on when the input includes a file or link
     pitfalls:
-      - 编辑视频是另一种写法：「编辑视频，视频1中的 xxx 改为 yyy，画面其余部分保持不变」，一次改一项最稳
+      - "Editing video is a different style: \"Edit the video, change xxx in Video 1 to yyy, keep the rest of the picture unchanged\" — changing one thing at a time is most stable"
     unverified:
-      - 切镜是否精确落在写的时间上没有说明
+      - Whether cuts land exactly on the stated time isn't documented
     sources:
       - https://help.aliyun.com/zh/model-studio/wan3-video-generation-prompt-guide
       - https://help.aliyun.com/zh/model-studio/wan3-video-generation-guide
@@ -493,13 +493,13 @@ models:
 
   wan-2.7-edit:
     basis: vendor
-    structure: 编辑指令：说清改什么、改成什么，其余保持不变；一次改一项
-    language: 中文、英文
-    length: 5000 字符以内；negative_prompt 500 字符以内
-    references: 「视频1」「图1」（英文 Video 1 / Image 1）；1 段视频（2–10 秒）加最多 4 张参考图
-    dialogue: audio_setting 选 origin 保留原声，auto 由模型处理
-    negatives: 有独立的 negative_prompt 字段
-    rewriter: prompt_extend 默认开；指令已经写清楚时关掉
+    structure: An editing instruction — state clearly what changes, into what, with everything else unchanged; one change per call
+    language: Chinese, English
+    length: Under 5000 characters; negative_prompt under 500 characters
+    references: '"Video 1", "Image 1" (in English: Video 1 / Image 1); 1 video clip (2–10 seconds) plus up to 4 reference images'
+    dialogue: audio_setting set to origin keeps the original audio, auto lets the model handle it
+    negatives: There's a dedicated negative_prompt field
+    rewriter: prompt_extend is on by default — turn it off once the instruction is already clearly written
     sources:
       - https://help.aliyun.com/zh/model-studio/wan-video-editing-api-reference
       - https://help.aliyun.com/zh/model-studio/text-to-video-prompt
@@ -507,21 +507,21 @@ models:
   wan-2.2:
     basis: vendor
     structure: >-
-      主体 + 场景 + 运动 + 美学控制（光源、光线、景别、视角、镜头、运镜）+ 风格化。有风格就放最前，美学词用标签，后面接主体、动作过程、背景。不写氛围、感受一类的文学描写
-    language: 中文、英文都可以（官方负面词和改写默认是中文）
-    length: 文生视频 60–200 字，图生视频 100 字以内；百炼上限 800 字符
-    multi_shot: 不支持，一次一个镜头
-    references: 文生 / 图生不支持参考标记
-    dialogue: 没有音频，不写台词和音效
+      Subject + scene + motion + aesthetic controls (light source, lighting, shot size, viewpoint, lens, camera work) + stylization. State a style first if there is one, with aesthetic words as tags, followed by subject, the action's progression, and background. Don't write literary descriptions of mood or feeling
+    language: Both Chinese and English work (the vendor's standard negative words and rewriter default to Chinese)
+    length: Text-to-video 60–200 characters, image-to-video under 100 characters; Bailian's limit is 800 characters
+    multi_shot: Not supported — one shot per call
+    references: Text-to-video/image-to-video don't support reference notation
+    dialogue: No audio — don't write dialogue or sound effects
     negatives: >-
-      独立字段，官方标准负面词：色调艳丽，过曝，静态，细节模糊不清，字幕，风格，作品，画作，画面，静止，整体发灰，最差质量，低质量，JPEG压缩残留，丑陋的，残缺的，多余的手指，画得不好的手部，画得不好的脸部，畸形的，毁容的，形态畸形的肢体，手指融合，静止不动的画面，杂乱的背景，三条腿，背景人很多，倒着走。用加速 LoRA（CFG=1）时负面词不生效
+      A dedicated field, with the vendor's standard negative words: garish colors, overexposed, static, blurred details, subtitles, style, artwork, painting, picture, still, overall grayish tone, worst quality, low quality, JPEG compression artifacts, ugly, incomplete, extra fingers, poorly drawn hands, poorly drawn faces, deformed, disfigured, deformed limbs, fused fingers, a static unmoving frame, cluttered background, three legs, a crowd of people in the background, walking backward. These negative words don't take effect when using an acceleration LoRA (CFG=1)
     camera: >-
-      官方词表——景别：特写、近景、中近景、中景、中全景、全景、极端全景；机位：过肩、低角度、高角度、俯视、航拍、平拍、仰拍；构图：中心构图、左 / 右侧重构图、对称构图；光线：柔光、硬光、侧光、顶光、边缘光、背光；运镜：镜头推进、镜头拉远、镜头左移、镜头上摇、环绕运镜、固定镜头。提示词里已经写了运镜就不要再加拍摄角度标签
-    frame_mode: 提示词 = 运动 + 运镜；画面里已经有的东西从提示词里删掉；要镜头不动写「固定镜头」
-    frames: 输出画幅跟首帧；首尾帧分辨率可以不同
-    rewriter: 开源版默认关（官方建议开）；百炼的 prompt_extend 默认开，已经按结构写好时关掉
+      Official vocabulary — shot size: close-up, medium close-up, medium-close, medium, medium-wide, wide, extreme wide; camera position: over-the-shoulder, low angle, high angle, overhead, aerial, eye-level, low-angle-up; composition: centered, left/right-weighted, symmetrical; lighting: soft light, hard light, side light, top light, rim light, backlight; camera work: push in, pull back, pan left, tilt up, orbit, static shot. Don't add a separate shooting-angle tag once camera work is already stated in the prompt
+    frame_mode: The prompt = motion + camera work; remove anything already in the frame from the prompt; write "static shot" for a locked-off camera
+    frames: The output aspect ratio follows the first frame; first and last frame can have different resolutions
+    rewriter: Off by default in the open-source version (the vendor recommends turning it on); Bailian's prompt_extend is on by default — turn it off for a prompt already written in the structure above
     pitfalls:
-      - 加速 LoRA 会压掉运动，画面像动态壁纸；社区做法是高噪阶段降低 LoRA 强度并把 CFG 提到 2–3.5
+      - An acceleration LoRA tends to suppress motion, making the picture look like a live wallpaper; the community workaround is lowering LoRA strength during the high-noise stage and raising CFG to 2–3.5
     sources:
       - https://help.aliyun.com/zh/model-studio/text-to-video-prompt
       - https://github.com/Wan-Video/Wan2.2/blob/main/wan/utils/system_prompt.py
@@ -530,23 +530,23 @@ models:
   ltx-2.5:
     basis: vendor
     structure: >-
-      一整段英文，按时间顺序、现在时：主要动作 → 细节动作 → 外观 → 环境 → 运镜 → 光线 → 变化。不用 "Audio:" "Visual:" 这类标签；景别、运镜、视角写进句子里，不要写成 "medium shot, static camera —" 这样的前缀；不写推测出来的情绪，写看得见的动作
-    language: 英文；台词保留原语言，原样放在引号里
-    length: 150–220 个词，视频越长提示词越长
+      One continuous English paragraph, in chronological order, present tense: primary action → detail action → appearance → environment → camera work → lighting → change. Don't use labels like "Audio:" "Visual:"; write shot size, camera work, and viewpoint into the sentence, not as a prefix like "medium shot, static camera —"; don't write an inferred emotion, write the visible action
+    language: English; keep dialogue in its original language, verbatim, in quotes
+    length: 150–220 words — longer video needs a longer prompt
     multi_shot: >-
-      仍然是一段话，不用镜头列表、编号或剧本格式；在句子里点明剪辑（"A hard cut transitions to…"），切后重新交代景别，沿用同一套称呼，说明声音是否延续。建议 2–4 个镜头
-    references: 没有参考标记
-    dialogue: 台词放引号里，写明语言或口音；长台词拆成短句，句间插一个表演提示（眼神、停顿、嗓音、动作）。有音频输入时，音频决定时间结构，提示词只写画面
-    negatives: 有默认的英文负面词；蒸馏版（CFG=1）没有负面输入
+      Still one paragraph — don't use a shot list, numbering, or screenplay format; call out a cut within the sentence ("A hard cut transitions to…"), re-establish shot size after the cut, keep using the same names, and state whether the sound continues. 2–4 shots is recommended
+    references: No reference notation
+    dialogue: Put dialogue in quotes, stating the language or accent; split a long line into short sentences, with a performance cue (a glance, a pause, the voice, an action) between them. When there's audio input, the audio determines the timing structure — the prompt only describes the picture
+    negatives: There are default English negative words; the distilled version (CFG=1) takes no negative input
     camera: >-
-      follows、tracks、pans across、circles around、tilts upward、pushes in、pulls back、overhead view、handheld movement、over-the-shoulder、static frame；"slow dolly in" 和 "handheld tracking" 最稳。镜头不动要明说 "the camera remains static"；写出运镜之后主体看起来什么样。数字规格（每秒 2 度）无效
-    frame_mode: 开头如实对上首帧画面，写成一个连续镜头（"Single continuous take"）；描述和图不符会引起切镜
-    frames: 宽高都要能被 32 整除，帧数是 8k+1
-    rewriter: enhance_prompt 默认关
+      follows, tracks, pans across, circles around, tilts upward, pushes in, pulls back, overhead view, handheld movement, over-the-shoulder, static frame; "slow dolly in" and "handheld tracking" are the most reliable. State explicitly when the camera doesn't move ("the camera remains static"); after writing the camera move, describe how the subject looks as a result. Numeric specs (2 degrees per second) have no effect
+    frame_mode: Open by matching the first frame faithfully, writing it as one continuous take ("Single continuous take"); a description that doesn't match the image causes an unwanted cut
+    frames: Both width and height must be divisible by 32; frame count is 8k+1
+    rewriter: enhance_prompt is off by default
     pitfalls:
-      - 画面里可读的文字和 Logo、混乱的物理、很多角色、互相矛盾的光线都容易出问题
+      - Readable on-screen text and logos, chaotic physics, many characters, and conflicting lighting are all prone to problems
     unverified:
-      - 声音描述放句中还是放末尾，官方不同版本的说法不一
+      - Whether a sound description goes mid-sentence or at the end — official versions disagree
     sources:
       - https://ltx.io/blog/ltx-2-5-prompt-guide
       - https://ltx.io/blog/prompting-guide-for-ltx-2
@@ -556,17 +556,17 @@ models:
   hunyuanvideo-1.5:
     basis: vendor
     structure: >-
-      文生视频：主体 + 运动 + 场景 + [景别] + [运镜] + [光线] + [风格] + [氛围]。复杂动作：场景设定 + 按顺序拆动作（First… then… next… meanwhile… finally…）+ 关键细节。情绪词换成动作细节；方向用画面坐标（画面左侧 / 右侧、前景 / 背景）；多个角色用属性或位置区分
-    language: 中文、英文都可以
-    length: 可以写长（改写后约 350 个词）
-    multi_shot: 没有多镜头写法，一次一个镜头
-    references: 没有参考标记
-    dialogue: 没有音频。引号在这里表示画面上的文字：中文提示词用“”，英文用 ""
-    negatives: negative_prompt 默认是空的，没有官方负面词；蒸馏版 CFG=1
+      Text-to-video: subject + motion + scene + [shot size] + [camera work] + [lighting] + [style] + [mood]. For complex action: establish the scene + break the action into steps in order (First… then… next… meanwhile… finally…) + key detail. Replace emotion words with action detail; describe direction using screen coordinates (left/right of frame, foreground/background); distinguish multiple characters by attribute or position
+    language: Both Chinese and English work
+    length: Can be long (around 350 words after rewriting)
+    multi_shot: No multi-shot notation — one shot per call
+    references: No reference notation
+    dialogue: 'No audio. Quotation marks here mean on-screen text: use "…" for a Chinese prompt, "..." for an English one'
+    negatives: negative_prompt is empty by default, with no official negative words; the distilled version uses CFG=1
     camera: >-
-      The camera moves upward / downward、moves to the left / right、moves forward、moves back、tilts up / down、pans to the left / right、circles around、follows、remains static；中文：镜头向前推进、镜头缓缓拉远、镜头跟随、镜头环绕、镜头静止不动、手持镜头
-    frame_mode: 图生视频：主体的运动 + 场景的运动 + [运镜]；不加用户没要求的运镜
-    rewriter: rewrite 默认开；已经按上面结构写好时可以关
+      The camera moves upward/downward, moves to the left/right, moves forward, moves back, tilts up/down, pans to the left/right, circles around, follows, remains static; Chinese: 镜头向前推进 (pushes forward), 镜头缓缓拉远 (slowly pulls back), 镜头跟随 (follows), 镜头环绕 (orbits), 镜头静止不动 (stays still), 手持镜头 (handheld)
+    frame_mode: 'Image-to-video: the subject''s motion + the scene''s motion + [camera work]; don''t add camera work the user didn''t ask for'
+    rewriter: rewrite is on by default — can be turned off once the prompt is already written in the structure above
     sources:
       - https://github.com/Tencent-Hunyuan/HunyuanVideo-1.5/blob/main/assets/HunyuanVideo_1_5_Prompt_Handbook_EN.md
       - https://github.com/Tencent-Hunyuan/HunyuanVideo-1.5/blob/main/README.md
@@ -574,17 +574,17 @@ models:
   flux-3-video:
     basis: vendor
     structure: >-
-      主体和动作 → 运镜 → 场景和氛围 → 运动的质感 → 连续性约束
+      Subject and action → camera work → scene and mood → the texture of the motion → continuity constraints
     multi_shot: >-
-      「SHOT ONE: … HARD CUT. SHOT TWO: …」，建议 2–3 个镜头，总长 20 秒以内；续写时写成同一个镜头接着拍，不切
+      "SHOT ONE: … HARD CUT. SHOT TWO: …" — 2–3 shots recommended, total under 20 seconds; when continuing, write it as the same shot continuing, with no cut
     dialogue: >-
-      台词用引号原文写，并点名画面里看得见的说话人；画外音标 voiceover；没标说话人的引号可能被画成画面上的字，要加 "no on-screen text or subtitles"；多语种时每句旁边写明语言；不要配乐写 "no music"；每个音效绑到一个看得见的动作上
+      Put dialogue in quotes verbatim, naming the visible speaker; label an off-screen voice as voiceover; quoted text with no named speaker can get rendered as on-screen text — add "no on-screen text or subtitles" to avoid that; for multiple languages, state the language next to each line; write "no music" for no soundtrack; tie each sound effect to a visible action
     camera: >-
-      有官方运镜词表（见来源）
+      Has an official camera-work vocabulary (see sources)
     frame_mode: >-
-      图生视频写运动，不描述图；首尾帧写过渡，两帧要相关；多关键帧写变化过程，顺序有意义，画面风格要一致，否则会被当成切镜
+      Image-to-video describes motion, not the image itself; first/last frame describes the transition, and the two frames should be related; multiple keyframes describe the process of change — the order matters, and the visual style should stay consistent or it gets read as a cut
     frames: >-
-      最多 10 张关键帧，可以带秒数；3 张以上要指定时长；关键帧、续写、草稿三种模式互斥
+      Up to 10 keyframes, which can carry a timestamp; 3 or more requires specifying duration; keyframe, continuation, and draft modes are mutually exclusive
     sources:
       - https://docs.bfl.ml/guides/prompting_video_overview.md
       - https://docs.bfl.ml/guides/prompting_video_image_to_video.md
@@ -595,30 +595,30 @@ models:
   flux-3-video-max:
     basis: vendor
     structure: >-
-      没有单独的指南，按 FLUX 3 Video 的写法（rea-video models flux-3-video）
+      No separate guide — follow FLUX 3 Video's style (rea-video models flux-3-video)
     frames: >-
-      最多 10 张关键帧，按 24fps 的帧序号指定；尾帧用 end_image_url
+      Up to 10 keyframes, specified by 24fps frame number; the last frame uses end_image_url
     unverified:
       - >-
-        FLUX 3 Video 的写法是否完全适用于 Max
+        Whether FLUX 3 Video's writing style fully applies to Max
     sources:
       - https://docs.bfl.ml/api-reference/utility/generate-a-video-with-flux-3-max.md
 
   runway-gen-4.5:
     basis: vendor
     structure: >-
-      文生视频："[Camera] shot of [subject] [action] in [environment]. [补充描述]"；图生视频："The camera [运镜] as the subject [动作]. [补充描述]"。不认 JSON 格式
-    language: 什么语言都收，英文最稳
-    length: 1000 字符以内，不要写成多段长文
+      Text-to-video: "[Camera] shot of [subject] [action] in [environment]. [additional description]"; image-to-video: "The camera [camera work] as the subject [action]. [additional description]". Doesn't accept JSON format
+    language: Accepts any language, English is most reliable
+    length: Under 1000 characters — don't write it as several long paragraphs
     multi_shot: >-
-      一次当作一个场景。时间戳只用来排动作顺序：文生「[00:00 through 00:02] …」，图生「[00:01] X occurs. [00:03] Y occurs.」或 "X occurs, then Y occurs. Finally, Z occurs."，不保证精确。出现多余切镜时加长时长或写 "Continuous, seamless shot"
-    references: Gen-4.5 生视频不收参考图；要保持角色一致，先用 Gen-4 References 出首帧（提示词里用 @名字 指代保存的参考），再拿首帧生视频
-    dialogue: 没有原生音频，提示词里的台词和音效去掉；要口型用 Act-Two（输入一段表演视频，不用文字）
-    negatives: 不支持否定，可能得到相反结果；改写成正面（"sharp focus" 而不是 "not blurry"，"The locked-off camera remains perfectly still."）
-    camera: 标准运镜词都认；镜头不动写 "Locked camera. The camera remains still."
-    frame_mode: 几乎只写运动，不描述图里已有的东西；主体用 "the subject" 或位置（"The subject on the left"）指代。只在引入新元素、明显变化或互动时才描述画面
-    frames: 只收首帧，没有尾帧；带运动模糊或动作中段的帧会和提示词打架，先处理干净；图生画幅 1280:720、720:1280、1104:832、960:960、832:1104、1584:672
-    rewriter: Enhance Prompt 是界面上的可选按钮，API 没有改写
+      Treated as one scene at a time. Timestamps are only used to order actions: text-to-video "[00:00 through 00:02] …", image-to-video "[00:01] X occurs. [00:03] Y occurs." or "X occurs, then Y occurs. Finally, Z occurs." — not guaranteed to be exact. If extra cuts appear, lengthen the duration or write "Continuous, seamless shot"
+    references: Gen-4.5 video generation doesn't accept a reference image; to keep a character consistent, first produce a first frame with Gen-4 References (referring to a saved reference by @name in the prompt), then generate video from that first frame
+    dialogue: No native audio — remove dialogue and sound effects from the prompt; for lip sync use Act-Two (input a performance video, not text)
+    negatives: Doesn't support negation — it can produce the opposite result; rephrase as positive ("sharp focus" instead of "not blurry", "The locked-off camera remains perfectly still.")
+    camera: All standard camera-work terms are recognized; write "Locked camera. The camera remains still." for a static shot
+    frame_mode: Write almost nothing but motion — don't describe what's already in the image; refer to the subject as "the subject" or by position ("The subject on the left"). Only describe the picture when introducing a new element, a clear change, or an interaction
+    frames: 'Only accepts a first frame, no last frame; a frame with motion blur or mid-action will conflict with the prompt — clean it up first; image-to-video aspect ratios: 1280:720, 720:1280, 1104:832, 960:960, 832:1104, 1584:672'
+    rewriter: Enhance Prompt is an optional button in the UI — the API has no rewriting
     sources:
       - https://help.runwayml.com/hc/en-us/articles/47313737321107
       - https://help.runwayml.com/hc/en-us/articles/48324313115155
@@ -627,29 +627,29 @@ models:
 
   runway-aleph-2:
     basis: vendor
-    structure: 动词 + 想要的改变，短而具体：add、remove、change、replace、re-light、re-style（"Change the outfit and bag to soft yellow"）。不是镜头描述
-    language: 英文最稳
-    references: 改一帧，模型把改动带到整段；Extra motion 只写原片里没有的运动
-    frames: 原视频 2–30 秒，480p–1080p，24–30 fps
+    structure: "Verb + the desired change, short and specific: add, remove, change, replace, re-light, re-style (\"Change the outfit and bag to soft yellow\"). Not a shot description"
+    language: English is most reliable
+    references: Edit one frame, and the model carries the change through the whole segment; Extra motion should only describe motion not in the original
+    frames: Original video 2–30 seconds, 480p–1080p, 24–30 fps
     sources:
       - https://help.runwayml.com/hc/en-us/articles/52150503729171
       - https://help.runwayml.com/hc/en-us/articles/51683104370451
 
   luma-ray3.2:
     basis: vendor
-    structure: 运镜放最前，再写场景、发生什么、光线和风格；加一个速度词（slowly、smoothly）。动词用进行中的动作（running，不用 begins to run），现在时
-    language: 英文
-    length: 100 个词左右（上限 6000 字符）
-    multi_shot: 没有时间戳和多镜头写法，一次一个镜头；一条提示词一种运镜
-    references: 没有标记语法；有角色参考时提示词只写场景和动作，身份交给参考图
-    dialogue: 没有音频，台词和音效不要写
-    negatives: 只写正面，没有负面字段；避免 vibrant、whimsical、hyper-realistic 这类词
-    camera: pan、tilt、dolly、zoom、tracking、crane、orbit、drone、whip pan；叠多个运镜结果会乱
-    frame_mode: 用关键帧时只写变化的部分，不写静止的元素
-    frames: 首尾帧只能出 5 秒；10 秒要用带帧序号的关键帧，且不能和首尾帧同用；图片 50 MB 以内，边长 8000 px 以内
+    structure: Camera work first, then the scene, what happens, lighting, and style; add one speed word (slowly, smoothly). Use an action verb in the present progressive (running, not begins to run), present tense
+    language: English
+    length: Around 100 words (6000-character limit)
+    multi_shot: No timestamp or multi-shot notation — one shot per call; one camera move per prompt
+    references: No notation syntax; with a character reference, the prompt should only describe the scene and action — identity is left to the reference image
+    dialogue: No audio — don't write dialogue or sound effects
+    negatives: Positive-only, no negative field; avoid words like vibrant, whimsical, hyper-realistic
+    camera: pan, tilt, dolly, zoom, tracking, crane, orbit, drone, whip pan; stacking multiple camera moves gets messy
+    frame_mode: With keyframes, describe only the part that changes — not the elements that stay still
+    frames: First/last frame can only produce 5 seconds; 10 seconds requires keyframes with frame numbers, and can't be combined with first/last frame; images under 50 MB, side length under 8000 px
     pitfalls:
-      - 多主体的密集动作弱
-      - 尾帧对上了，中间的运动也不一定连贯
+      - Weak on dense action involving multiple subjects
+      - Even when the last frame lands correctly, the motion in between isn't guaranteed to be coherent
     sources:
       - https://lumalabs.ai/news/ai-camera-movement-prompts
       - https://lumalabs.ai/learning-hub/luma-video-models-guide-ray3.14-veo-sora-kling-compared
@@ -658,18 +658,18 @@ models:
   minimax-h3-image:
     basis: vendor
     length: >-
-      最长 32000 字符；关掉扩写时大约只有前 4096 token 起作用
+      Up to 32000 characters; with rewriting off, only roughly the first 4096 tokens take effect
     references: >-
-      <Picture 1> 到 <Picture 16>（第三方说法）
+      <Picture 1> through <Picture 16> (per third-party reports)
     negatives: >-
-      没有负面提示词，API 会拒绝
+      No negative prompt — the API rejects one
     frames: >-
-      尺寸 655360–20000000 像素、长宽比 1:3–3:1，或者用 area 选 1K / 2K / 4K；一次 1–10 张
+      Size 655360–20000000 pixels, aspect ratio 1:3–3:1, or use `area` to pick 1K/2K/4K; 1–10 images per call
     rewriter: >-
-      disable_prompt_enhanced 默认 false（扩写开着），要精确控制设为 true
+      disable_prompt_enhanced defaults to false (rewriting on) — set to true for precise control
     pitfalls:
       - >-
-        请求不是幂等的，重试会再计费
+        Requests aren't idempotent — a retry gets billed again
     sources:
       - https://platform.minimax.io/docs/api-reference/image-generation-h3-generations.md
       - https://www.orcarouter.ai/blog/minimax-h3-image-launch
@@ -677,33 +677,33 @@ models:
   midjourney-v8.2:
     basis: third-party
     structure: >-
-      自然的句子，主体放前面，参数放最后；不要堆 8k、masterpiece 这类标签
+      A natural sentence, subject first, parameters last; don't stack tags like 8k, masterpiece
     references: >-
-      --sref 风格参考（最多 20 张）锁画风；--oref 角色参考 1 张、--ow 建议 400 以下，但 V8 是否支持各来源说法不一；--cref 不支持
+      --sref style reference (up to 20 images) locks the art style; --oref character reference (1 image), --ow recommended under 400, though whether V8 supports it is disputed across sources; --cref isn't supported
     negatives: >-
-      --no（部分第三方 V8 接口不支持）
+      --no (not supported by some third-party V8 interfaces)
     frames: >-
-      画幅用 --ar；--raw 减少风格化；画面文字放引号里，2–4 个词最稳
+      Use --ar for aspect ratio; --raw reduces stylization; put on-screen text in quotes, 2–4 words is most reliable
     unverified:
       - >-
-        官方页面没打开，参数支持情况来自第三方
+        The official page wasn't accessible — parameter support comes from third parties
     sources:
       - https://evolink.ai/docs/en/api-manual/image-series/midjourney/midjourney-v8-1-prompt-guide.md
       - https://blakecrosley.com/en/guides/midjourney
 
-  # -------------------------------------------------------------- 图像模型（出首帧 / 关键帧）
+  # -------------------------------------------------------------- Image models (producing a first frame / keyframe)
   gpt-image-2.5:
     basis: vendor
     structure: >-
-      背景 / 场景 → 主体 → 关键细节 → 约束，并写明用途；复杂提示词分成带标签的短段或分行。相机参数只当观感参考，不会精确模拟
-    language: 英文为主；中文文字的渲染官方没有说明
+      Background/scene → subject → key detail → constraints, stating the intended use; split a complex prompt into labeled short sections or lines. Camera parameters are only a look-and-feel reference, not precisely simulated
+    language: Mostly English; the vendor doesn't document Chinese-text rendering
     references: >-
-      按序号和职责标注输入图："Image 1: product photo… Image 2: style reference…"，再写它们怎么组合（"apply Image 2's style to Image 1"）。改图写「只改 X，其余保持不变」，保留清单每一轮都重复一遍（"Do not change her face, facial features, skin tone, body shape, pose, or identity in any way."）
-    negatives: 没有负面字段，直接写 "no watermark" "no extra text"
-    frames: 画面里的文字放引号里或全大写，写明字体，难拼的品牌名逐字母拼；尺寸的边长是 16 的倍数，长宽比不超过 3:1
+      Label each input image by number and role: "Image 1: product photo… Image 2: style reference…", then state how they combine ("apply Image 2's style to Image 1"). For an edit, write "only change X, keep everything else the same," repeating the retention list every round ("Do not change her face, facial features, skin tone, body shape, pose, or identity in any way.")
+    negatives: 'No negative field — write directly: "no watermark" "no extra text"'
+    frames: Put on-screen text in quotes or all caps, stating the font; spell out a hard-to-get brand name letter by letter; side lengths must be a multiple of 16, aspect ratio under 3:1
     pitfalls:
-      - 出一组关键帧：先出一张定妆图，再基于它改，只变场景和动作，每次带上 "Same facial features, proportions, and color palette" "Do not redesign the character"
-      - 同一个会话里连出几张后会累积噪点，换新会话
+      - "For a set of keyframes: produce one reference image first, then modify it, changing only the scene and action each time, carrying \"Same facial features, proportions, and color palette\" \"Do not redesign the character\" every time"
+      - Generating several images in a row in the same session accumulates noise — start a new session
     sources:
       - https://developers.openai.com/api/docs/guides/image-prompting
       - https://developers.openai.com/cookbook/examples/multimodal/image-gen-models-prompting-guide
@@ -711,20 +711,20 @@ models:
   gpt-image-2.6:
     basis: vendor
     structure: >-
-      场景 → 主体 → 细节 → 约束，可以分成带标签的段落；没有特殊语法。尺寸和质量用 API 参数设，不写进提示词
+      Scene → subject → detail → constraints, which can be split into labeled paragraphs; no special syntax. Size and quality are set via API parameters, not written into the prompt
     references: >-
-      按序号和职责标注：image 1 是主体、image 2 是风格 / 服装 / 背景。改图写「只改 X」，列出要保持的（身份、几何、布局、光线、标签），最后加 "Do not change anything else"；可以在图 1 上圈出要改的地方
+      Label by number and role: image 1 is the subject, image 2 is style/clothing/background. For an edit, write "only change X," listing what to keep (identity, geometry, layout, lighting, labels), ending with "Do not change anything else"; you can circle the area to change on image 1
     negatives: >-
-      没有负面字段，写在提示词里（"no extra text"）
+      No negative field — write it into the prompt ("no extra text")
     frames: >-
-      文字放引号里，写明位置和字体，生僻词逐字母拼；尺寸边长 3840 以内、16 的倍数，长宽比 1:3–3:1
+      Put text in quotes, stating position and font, spelling out rare words letter by letter; side length under 3840, a multiple of 16, aspect ratio 1:3–3:1
     pitfalls:
       - >-
-        出一组关键帧：先做一张角色参考图，之后每张都带上它，重复外貌细节，并写 "Do not redesign the character"
+        For a set of keyframes: make one character-reference image first, then carry it into every subsequent image, repeating appearance detail and writing "Do not redesign the character"
       - >-
-        某块区域必须一个像素都不变时，生成后把原图那块合成回去，不要指望提示词
+        If a region must stay pixel-exact, composite that region from the original image back in after generating — don't rely on the prompt for that
       - >-
-        编辑时不要传 input_fidelity
+        Don't pass input_fidelity when editing
     sources:
       - https://developers.openai.com/api/docs/guides/image-prompting
       - https://developers.openai.com/api/docs/guides/image-generation
@@ -732,16 +732,16 @@ models:
   nano-banana-2.1:
     basis: vendor
     structure: >-
-      [主体] + [动作] + [地点 / 环境] + [构图] + [风格]，写成完整的叙述句，用一个明确的动词开头，不要堆关键词。带参考图：[参考图] + [关系说明] + [新场景]
-    language: 英文为主；画面文字放引号里并写明字体风格
+      [Subject] + [Action] + [Location/environment] + [Composition] + [Style], written as a complete narrative sentence starting with a clear verb — don't stack keywords. With a reference image: [reference image] + [stated relationship] + [new scene]
+    language: Mostly English; put on-screen text in quotes with the font style stated
     references: >-
-      用白话说明每张图的职责；锁身份写 "Keep the person's facial features exactly the same as Image 1."；多人写 "Make sure to only have one of each character in each image."。最多 14 张（10 个物体、4 个角色）。改图要写明什么保持完全不变，不需要蒙版
-    negatives: 不写否定，换成正面描述（"empty street" 而不是 "no cars"）
-    frames: 分辨率 1K / 2K / 4K；不指定时输出跟输入图同尺寸；一组关键帧一张一张出，把前面出的图带进后面的提示词，并写明人物和服装不变
+      State each image's role in plain language; to lock identity, write "Keep the person's facial features exactly the same as Image 1."; for multiple people write "Make sure to only have one of each character in each image." Up to 14 images (10 objects, 4 characters). For an edit, state exactly what stays completely unchanged — no mask needed
+    negatives: Don't write a negative — rephrase it positively ("empty street" instead of "no cars")
+    frames: Resolution 1K/2K/4K; without a specified size, output matches the input image's size; for a set of keyframes, produce them one at a time, carrying each previous image into the next prompt and stating that the character and clothing stay unchanged
     pitfalls:
-      - 图已经对了八成就提具体修改，不要整张重出
-      - 多轮修改后画质下降
-      - 偶尔不按指定比例出图
+      - If an image is already 80% right, ask for a specific fix rather than regenerating the whole thing
+      - Image quality degrades after several rounds of edits
+      - Occasionally doesn't follow the specified aspect ratio
     sources:
       - https://cloud.google.com/blog/products/ai-machine-learning/ultimate-prompting-guide-for-nano-banana
       - https://aistudio.google.com/docs/image-generation
@@ -749,18 +749,18 @@ models:
 
   seedream-5.0:
     basis: vendor
-    structure: 简洁连贯的自然语言：主体 + 行为 + 环境，风格、色彩、光线、构图用短语补充；简洁准确比堆砌形容词好，可以写明用途
-    language: 中文、英文
-    length: 中文 300 字以内，英文 600 词以内
+    structure: Concise, coherent natural language — subject + behavior + environment, with style, color, lighting, and composition added as short phrases; being concise and accurate beats stacking adjectives, and stating the intended use is fine
+    language: Chinese, English
+    length: Up to 300 Chinese characters, or 600 English words
     references: >-
-      用「图一 / 图二」指代并写明职责：「将图一的主体替换为图二的主体」「让图一人物穿上图二的服装」「参考图二的风格，对图一进行风格转换」。要保持不变的部分必须明说（「并保持动作不变」），不用「它」这类代词。5.0 pro / flash 可以用 <bbox> 坐标指定区域
-    negatives: 官方指南没有提到负面提示词
+      Refer to images as "Image 1 / Image 2" with a stated role: "replace the subject in Image 1 with the subject in Image 2", "dress Image 1's person in Image 2's clothing", "apply Image 2's style to Image 1". Anything that should stay the same must be stated explicitly ("and keep the action unchanged") — don't use a pronoun like "it." 5.0 pro / flash support a <bbox> coordinate to target a region
+    negatives: The vendor's guide doesn't mention a negative prompt
     frames: >-
-      画面里的文字放双引号里。出一组关键帧：5.0 lite / 4.x 用「一系列」「一套」「组图」或直接写数量触发组图（最多 15 张）；5.0 pro / flash 不支持组图，带同一组参考图逐张出。保持人物一致：上传参考图并写「参考图中的人物形象」加新场景
-    rewriter: optimize_prompt_options.mode 只有 standard（默认）和 fast，没有关闭选项
+      Put on-screen text in double quotes. For a set of keyframes: 5.0 lite / 4.x can trigger a batch with "a series," "a set," "a group of images," or just stating the count (up to 15); 5.0 pro / flash don't support batches — produce them one at a time with the same reference images. To keep a character consistent, upload a reference image and write "the character shown in the reference image" plus the new scene
+    rewriter: optimize_prompt_options.mode only has standard (default) and fast — no off option
     pitfalls:
-      - 细小文字渲染弱：文字要短，写明位置
-      - 皮肤过度光滑，可以写「没有美颜滤镜」这类瑕疵描述
+      - Weak at rendering small text — keep text short and state its position
+      - Skin can look over-smoothed — write something like "no beauty filter" to request natural flaws
     sources:
       - https://docs.volcengine.com/docs/ark/seedream-4-0-5-0-prompt-guide?lang=zh
       - https://docs.volcengine.com/docs/ark/image-generation-api?lang=zh
@@ -769,28 +769,28 @@ models:
   seedream-5.5:
     basis: vendor
     structure: >-
-      和 Seedream 5.0 同一套写法（rea-video models seedream-5.0）：简洁的自然语言写主体 + 行为 + 环境
+      Same writing style as Seedream 5.0 (rea-video models seedream-5.0): concise natural language for subject + behavior + environment
     length: >-
-      中文 300 字以内，英文 600 词以内
+      Up to 300 Chinese characters, or 600 English words
     references: >-
-      用「图1 / 图2」指代：「将图1的服装换为图2的服装」；要保持的写明（「保持构图不变」）；最多 10 张
+      Refer to images as "Image 1 / Image 2": "replace Image 1's clothing with Image 2's clothing"; state what to keep ("keep the composition unchanged"); up to 10 images
     frames: >-
-      文字放引号里（标题为“…”）；用 size 参数控制尺寸；不支持组图，一组关键帧要带同一组参考图逐张出
+      Put text in quotes (title as "…"); size is controlled by the `size` parameter; doesn't support batches — for a set of keyframes, produce them one at a time with the same reference images
     pitfalls:
       - >-
-        官方称可以连续改 100 轮，没改的区域不动，适合先出一张再一点点改
+        The vendor says up to 100 rounds of successive edits are possible, with untouched regions staying put — good for producing one image, then refining it bit by bit
     sources:
       - https://docs.volcengine.com/docs/82379/1824121
 
   qwen-image-3.0-pro:
     basis: vendor
-    language: 只支持中文和英文
-    length: 提示词 800–1300 token；negative_prompt 500 字符以内
-    references: 按数组顺序用「图1 / 图2」指代：「图1中的女生穿着图2中的黑色裙子按图3的姿势坐下」；3.0 收 1–3 张输入图。要保留的部分明说（保持服装、发型、表情不变）
+    language: Only Chinese and English are supported
+    length: Prompt 800–1300 tokens; negative_prompt under 500 characters
+    references: 'Refer to images in array order as "Image 1 / Image 2": "the girl in Image 1 wears the black dress from Image 2 and sits in the pose from Image 3"; 3.0 accepts 1–3 input images. State what to keep explicitly (keep clothing, hairstyle, expression unchanged)'
     negatives: >-
-      3.0 有 negative_prompt 字段。官方示例：低分辨率，低画质，肢体畸形，手指畸形，画面过饱和，蜡像感，人脸无细节，过度光滑，画面具有AI感。构图混乱。文字模糊，扭曲。
-    frames: 中文多行和段落文字渲染强，文字放在中文引号“”里；尺寸写 宽*高，16:9 推荐 2688*1536，9:16 推荐 1536*2688；输入图边长 384–3072 px，10 MB 以内
-    rewriter: prompt_extend 默认开，会改写提示词；要精确控制时关掉
+      3.0 has a negative_prompt field. The vendor's example: low resolution, low quality, deformed limbs, deformed fingers, oversaturated image, waxy look, faces lacking detail, overly smooth, an AI feel to the image, cluttered composition, blurry and distorted text.
+    frames: Strong at rendering multi-line Chinese text and paragraphs — put text inside Chinese quotation marks "…"; write size as width*height, 2688*1536 recommended for 16:9, 1536*2688 for 9:16; input image side length 384–3072 px, under 10 MB
+    rewriter: prompt_extend is on by default and rewrites the prompt — turn it off for precise control
     sources:
       - https://help.aliyun.com/zh/model-studio/qwen-image-edit-guide
       - https://help.aliyun.com/zh/model-studio/qwen-image-api
@@ -798,31 +798,31 @@ models:
   qwen-image-2.1:
     basis: vendor
     language: >-
-      中文、英文
+      Chinese, English
     references: >-
-      最多 10 张输入图；局部编辑可以圈选、涂抹或给蒙版
+      Up to 10 input images; a local edit can use a circled region, a scribble, or a mask
     frames: >-
-      要透明背景时，把主体描述夹在 "This is an RGBA image with transparency." 和 "The image has alpha channel and the background is transparent." 中间；原生 2K，推荐尺寸 2048x2048、2752x1536 及对应竖版
+      For a transparent background, sandwich the subject description between "This is an RGBA image with transparency." and "The image has alpha channel and the background is transparent."; native 2K, recommended sizes 2048x2048, 2752x1536, and the corresponding portrait versions
     rewriter: >-
-      有专门的改写模型 Qwen-Image-2.1-PE-T2I / -PE-I2I，用来扩写短提示词
+      There's a dedicated rewriting model, Qwen-Image-2.1-PE-T2I / -PE-I2I, for expanding a short prompt
     sources:
       - https://huggingface.co/Qwen/Qwen-Image-2.1
       - https://www.alibabacloud.com/blog/qwen-image-2-1-pro-and-turbo-apis-are-live-one-7b-model-to-generate-edit-and-cut-out_603679
 
   flux-3:
     basis: vendor
-    structure: 主体 + 动作 + 风格 + 环境，重要的放前面（越靠前权重越高）；30–80 个词
-    language: 英文最准；中文没有说明
-    references: 按位置指代并给职责："subject from image 1, style from image 2, background from image 3"；1–10 张。改图只说要变的部分，要保留的明说（"while maintaining the same facial features and hairstyle"），用具体的动词
-    negatives: 不支持负面提示词，也没有 seed、guidance、prompt_upsampling 字段（多传会报错）；改写成正面（"sharp focus throughout"）
+    structure: Subject + action + style + environment, with the important part first (earlier in the prompt carries more weight); 30–80 words
+    language: English is most accurate; Chinese isn't documented
+    references: Refer to images by position with a stated role — "subject from image 1, style from image 2, background from image 3"; 1–10 images. For an edit, only state what changes, and explicitly state what to keep ("while maintaining the same facial features and hairstyle"), using a specific verb
+    negatives: Doesn't support a negative prompt, and has no seed, guidance, or prompt_upsampling field (passing extra ones errors) — rephrase positively ("sharp focus throughout")
     frames: >-
-      文字放引号里、靠前写、要短；色值前加 color 或 hex 并绑定到具体物体（"in color #0047AB"）；auto 模式下输出画幅跟第一张输入图
-    rewriter: 提示词扩写始终开启，不能关（第三方说法）
+      Put text in quotes, written early, and kept short; prefix a color value with "color" or hex and tie it to a specific object ("in color #0047AB"); in auto mode, output aspect ratio follows the first input image
+    rewriter: Prompt expansion is always on and can't be disabled (per third-party reports)
     pitfalls:
-      - 一组分镜里每一格都要重复完整的角色描述
-      - 出一组图：主体、风格、光线、色板固定，只改运镜那一句；要细修就拿选中的一张当参考图改，重新写提示词等于全部重来
+      - Every panel in a storyboard set needs the full character description repeated
+      - "For a set of images: fix the subject, style, lighting, and color palette, changing only the camera-work sentence; for a detailed fix, take the selected image as a reference and edit it — rewriting the prompt means starting over completely"
     unverified:
-      - JSON 结构化提示词是 FLUX.2 的文档写的，FLUX 3 没有提
+      - The JSON structured-prompt format is documented for FLUX.2 — FLUX 3 doesn't mention it
     sources:
       - https://docs.bfl.ai/guides/prompting_guide_flux2
       - https://docs.bfl.ml/guides/prompting_unified_reference.md
@@ -831,28 +831,28 @@ models:
 
   kling-o3-image:
     basis: vendor
-    structure: 自然语言；写清楚保留什么、改什么、哪张参考图管哪个元素
-    length: 2500 字符以内，没有单独的负面字段
+    structure: Natural language; state clearly what to keep, what to change, and which reference image controls which element
+    length: Under 2500 characters, no separate negative field
     references: >-
-      App 里用 Image 1 / Image 2 指代，API 里写 <<<image_1>>>，图片加主体最多 10 个。："Use Image 1 as the base. Dress the person in Image 1 with the dress from Image 2 and the handbag from Image 3."；保留项写 "keeping all facial features, poses, and lighting the same" "leaving everything else untouched"；一次只改一个元素
+      In the app, use Image 1 / Image 2; the API writes <<<image_1>>>; up to 10 images/subjects. "Use Image 1 as the base. Dress the person in Image 1 with the dress from Image 2 and the handbag from Image 3."; state what to keep as "keeping all facial features, poses, and lighting the same" "leaving everything else untouched"; change one element at a time
     frames: >-
-      有组图模式（只有 Omni 版；API 写 result_type: series，series_amount 2–9），可以按一张图续出分镜（"Predict the next part of the story based on this image and generate six storyboard frames."）；1K / 2K / 4K
+      There's a batch mode (Omni version only; the API writes result_type: series, series_amount 2–9), which can continue a storyboard from one image ("Predict the next part of the story based on this image and generate six storyboard frames."); 1K/2K/4K
     sources:
       - https://kling.ai/quickstart/klingai-image-3-omni-user-guide
       - https://kling.ai/document-api/api/image/3-0-omni/image-omni.md
       - https://kling.ai/blog/kling-image-3-vs-omni
 
-  # -------------------------------------------------------------- 人物驱动（文字能管的很少）
+  # -------------------------------------------------------------- Character driving (little of this is controlled by text)
   kling-motion-control:
     basis: third-party
-    structure: 提示词可选：写身份、环境、光线、风格；不要描述动作，动作由参考视频决定
-    length: 2500 字符以内
+    structure: Prompt is optional — write identity, environment, lighting, style; don't describe the action, which is determined by the reference video
+    length: Under 2500 characters
     frames: >-
-      图片 300 px 以上、10 MB 以内，主体占画面 5% 以上、不被遮挡、露出头部；参考视频是一个连续镜头、只有一个人、没有切镜和运镜，图和视频的全身 / 半身要一致。character_orientation=image 保持图里的朝向（视频 3–10 秒），=video 跟视频的朝向和运镜（3–30 秒）
-    camera: 跟随图片朝向时可以在提示词里写运镜；跟随视频朝向时运镜跟参考视频走
+      Images over 300 px, under 10 MB, subject covering at least 5% of the frame, unobstructed, head visible; the reference video is one continuous shot with only one person, no cuts or camera moves, and the image and video should match in full-body vs. half-body framing. character_orientation=image keeps the image's orientation (video 3–10 seconds), =video follows the video's orientation and camera work (3–30 seconds)
+    camera: When following the image's orientation, camera work can be written into the prompt; when following the video's orientation, camera work follows the reference video
     pitfalls:
-      - 3.0 的主体绑定只用脸（不管衣服、发型、妆），只在跟随视频朝向模式下可用；画面里几个人大小差不多时绑定会失败
-      - 动作太快太复杂时输出可能比参考视频短，积分不退
+      - 3.0's subject binding uses only the face (not clothing, hairstyle, or makeup), and only works in follow-the-video-orientation mode; binding fails when several similarly sized people are in frame
+      - For motion that's too fast or complex, the output can come out shorter than the reference video, with no credit refund
     sources:
       - https://kling.ai/quickstart/motion-control-user-guide
       - https://apidoc.cometapi.com/api/video/kling/motion-control.md
@@ -860,17 +860,17 @@ models:
 
   kling-avatar-v2:
     basis: vendor
-    structure: 提示词可选，只写表情、动作和运镜，不写外貌（"Smiling warmly at the camera, she gently touches her necklace… stationary shot."）
-    length: 2500 字符以内
-    dialogue: 台词文本里用逗号控制停顿
-    frames: 图片 300×300 以上，宽高比 1:2.5–2.5:1；音频 2–300 秒
+    structure: Prompt is optional — write only expression, action, and camera work, not appearance ("Smiling warmly at the camera, she gently touches her necklace… stationary shot.")
+    length: Under 2500 characters
+    dialogue: Use commas in the dialogue text to control pauses
+    frames: Images at least 300×300, aspect ratio 1:2.5–2.5:1; audio 2–300 seconds
     sources:
       - https://kling.ai/quickstart/kling-ai-avatar-2-user-guide
       - https://kling.ai/document-api/api/video/avatar.md
 
   wan-2.2-animate:
     basis: vendor
-    structure: 百炼接口没有提示词参数，只收图、视频和模式；开源版用一句默认提示词（「视频中的人在做动作」）即可
+    structure: The Bailian interface has no prompt parameter — it only takes an image, video, and mode; the open-source version just needs a default one-sentence prompt ("the person in the video is performing an action")
     sources:
       - https://help.aliyun.com/zh/model-studio/wan-animate-move-api
       - https://github.com/Wan-Video/Wan2.2/blob/main/generate.py
@@ -878,63 +878,63 @@ models:
   wan-animate-2:
     basis: vendor
     structure: >-
-      提示词写角色外貌（不写动作）加客观的背景描述；官方模板是中文，由大模型看图生成；视角也用文字指定
+      The prompt describes the character's appearance (not the action) plus an objective background description; the vendor's template is in Chinese, generated by a large model looking at the image; viewpoint is also specified in text
     sources:
       - https://github.com/Wan-Video/Wan-Animate-2
 
   viggle-animate:
     basis: vendor
     structure: >-
-      视频生成这一步没有文字提示词；提示词用在前一步：用图像模型把驱动视频的一帧改成新角色
+      The video-generation step itself has no text prompt; the prompt is used in the previous step — using an image model to repaint one frame of the driving video into the new character
     sources:
       - https://viggle.ai/blog/viggle-animate-character-replacement-from-a-repainted-frame
 
   omnihuman-2.0:
     basis: vendor
-    structure: 提示词可选：写场景、动作和运镜，也可以加图里没有的物体或特效；不描述外貌
-    language: 中、英、日、韩、西班牙语、印尼语
-    frames: 图片边长 300–6000 px、宽高比 0.4–2.5、30 MB 以内；音频 4–300 秒，wav / mp3
+    structure: Prompt is optional — write the scene, action, and camera work, or add an object or effect not in the image; don't describe appearance
+    language: Chinese, English, Japanese, Korean, Spanish, Indonesian
+    frames: Image side length 300–6000 px, aspect ratio 0.4–2.5, under 30 MB; audio 4–300 seconds, wav/mp3
     unverified:
-      - BytePlus 文档正文没读到，参数来自 fal
+      - The BytePlus docs' main text wasn't accessible — parameters come from fal
     sources:
       - https://fal.ai/models/fal-ai/bytedance/omnihuman/v2/llms.txt
       - https://docs.byteplus.com/en/docs/byteplus-vision/omnihuman-2-0-video-generation
 
   sync-3:
     basis: vendor
-    structure: 没有画面提示词；输入视频或静态图，加音频或 TTS 文本
-    language: 95 种以上语言；内置 92 种语言配音
-    frames: 免费档每次最长 15 秒
+    structure: No visual prompt — input a video or still image, plus audio or TTS text
+    language: 95+ languages; 92 built-in dubbing languages
+    frames: The free tier is capped at 15 seconds per call
     sources:
       - https://sync.so/docs/models/sync-3
 
   sync-react-1:
     basis: vendor
     structure: >-
-      options.prompt 只收一个情绪词：happy、angry、sad、neutral、disgusted、surprised；不写就保留原视频的情绪。model_mode 选 lips（只改嘴）、face（默认）或 head（连头部动作一起改）
+      options.prompt only accepts one emotion word: happy, angry, sad, neutral, disgusted, surprised; leaving it unset keeps the original video's emotion. model_mode chooses lips (mouth only), face (default), or head (head motion included)
     frames: >-
-      最长 15 秒；画面里只能有一个清楚可见的说话人
+      Up to 15 seconds; only one clearly visible speaker allowed in frame
     sources:
       - https://sync.so/docs/models/react
 
   ltx-2.3-lipsync:
     basis: vendor
     structure: >-
-      配音口型模板：[Speaker] is speaking [Language/Accent], saying: "[Dialogue]"。台词用原文字全文写出，只有一个说话人，音节数接近原句
-    language: 验证过的语言是英、法、西、德、俄
+      Dubbing/lip-sync template: [Speaker] is speaking [Language/Accent], saying: "[Dialogue]". Write dialogue out in full, with only one speaker, and a syllable count close to the original line
+    language: Verified languages are English, French, Spanish, German, Russian
     sources:
       - https://ltx.io/blog/ltx-2-5-prompt-guide
 
   heygen-avatar-v:
     basis: vendor
     structure: >-
-      Custom Motion 用白话指导脸、手、姿势、眼神和精神状态（"Look at the camera, lean in, stay serious"、"Thumbs up at the end"）；API 字段 motion_prompt，只对 Avatar V 视频数字人生效；expressiveness 只在 Avatar IV 可用，Avatar V 会拒
+      Custom Motion uses plain language to guide the face, hands, posture, gaze, and mental state ("Look at the camera, lean in, stay serious", "Thumbs up at the end"); the API field motion_prompt only applies to Avatar V digital-avatar video; expressiveness is Avatar IV-only and gets rejected by Avatar V
     language: >-
-      平台支持 177 种以上语言和方言
+      The platform supports 177+ languages and dialects
     length: >-
-      脚本最长 5000 字符；音频最长 10 分钟
+      Script up to 5000 characters; audio up to 10 minutes
     dialogue: >-
-      脚本里的停顿和情绪标记没找到官方写法；more_blinking 可以多眨眼
+      No documented official syntax for pause and emotion markers in the script; more_blinking adds extra blinking
     sources:
       - https://developers.heygen.com/changelog
       - https://developers.heygen.com/docs/usage-limits.md
@@ -942,40 +942,40 @@ models:
   synthesia-express-3:
     basis: vendor
     structure: >-
-      没有动作提示词；情绪（开心、严肃、中性、友好）按脚本自动判断，手势跟着脚本走
+      No action prompt — emotion (happy, serious, neutral, friendly) is inferred automatically from the script, and gestures follow the script
     language: >-
-      平台支持 140 多种语言
+      The platform supports 140+ languages
     sources:
       - https://www.synthesia.io/updates/express-3
 
   mirage-avatar-x:
     basis: vendor
     structure: >-
-      没有动作提示词；表情、节奏、动作跟着声音或脚本走
+      No action prompt — expression, pacing, and motion follow the audio or script
     length: >-
-      脚本 50–1500 字符（最长 180 秒）
+      Script 50–1500 characters (up to 180 seconds)
     frames: >-
-      参考视频 1–120 秒或图片（短边 512 px 以上）；声音参考 10–180 秒，只用前 60 秒；只有 9:16 和 16:9
+      Reference video 1–120 seconds or an image (short side over 512 px); audio reference 10–180 seconds, only the first 60 seconds is used; only 9:16 and 16:9
     sources:
       - https://fal.ai/mirage-avatar-x
 
   longcat-video-avatar-1.5:
     basis: vendor
     structure: >-
-      提示词写长一点；和多数数字人模型不同，要写外貌、动作和场景
+      Write a longer prompt than usual — unlike most digital-avatar models, it needs appearance, action, and scene written out
     language: >-
-      中文、英文
+      Chinese, English
     pitfalls:
       - >-
-        音频 CFG 设 3–5，口型不准就调高
+        Set audio CFG to 3–5; raise it if lip sync is off
       - >-
-        长视频动作会重复，调 --ref_img_index 和 --mask_frame_range
+        A long video repeats its motion — adjust --ref_img_index and --mask_frame_range
     sources:
       - https://huggingface.co/meituan-longcat/LongCat-Video-Avatar-1.5
 
   creatify-aurora:
     basis: third-party
     structure: >-
-      提示词写取景、背景、光线、眼神，以及身体是否保持不动；guidance_scale 和 audio_guidance_scale 都是 0–5
+      The prompt describes framing, background, lighting, gaze direction, and whether the body stays still; guidance_scale and audio_guidance_scale both range 0–5
     sources:
       - https://fal.ai/models/fal-ai/creatify/aurora/llms.txt
